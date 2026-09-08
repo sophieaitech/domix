@@ -122,6 +122,9 @@ create table if not exists public.service_requests (
     dropoff_location geometry(Point, 4326),
     contact_name text,
     contact_phone text,
+    -- Los clientes piden como invitados (sin cuenta ni login). tracking_code
+    -- es lo único que necesitan para consultar el estado de su pedido después.
+    tracking_code text unique default substr(md5(random()::text || clock_timestamp()::text), 1, 8),
     price decimal(10,2) not null default 6000,
     max_budget decimal(10,2),
     tip decimal(10,2) default 0,
@@ -136,23 +139,43 @@ create table if not exists public.service_requests (
 
 create index if not exists service_requests_status_idx on public.service_requests(status);
 create index if not exists service_requests_courier_idx on public.service_requests(courier_id);
+create index if not exists service_requests_tracking_idx on public.service_requests(tracking_code);
 
 alter table public.service_requests enable row level security;
 
-create policy "Clientes y repartidores ven sus propias solicitudes"
+-- El cliente pide sin cuenta: solo necesita contact_phone/contact_name.
+-- client_id queda null en ese caso (se llena solo si en el futuro hay cuentas).
+create policy "Repartidores, admin y dueno de cuenta ven las solicitudes"
     on public.service_requests for select
-    using ( auth.uid() = client_id or auth.uid() = courier_id
+    using ( auth.uid() = courier_id
+            or (client_id is not null and auth.uid() = client_id)
             or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
 
-create policy "Clientes y admin crean solicitudes"
+create policy "Cualquiera (con o sin cuenta) crea una solicitud"
     on public.service_requests for insert
-    with check ( auth.uid() = client_id
-                 or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
+    with check ( client_id is null or auth.uid() = client_id );
 
-create policy "Repartidor, cliente y admin actualizan la solicitud"
+create policy "Repartidor y admin actualizan la solicitud"
     on public.service_requests for update
-    using ( auth.uid() = client_id or auth.uid() = courier_id
+    using ( auth.uid() = courier_id
             or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
+
+-- Consulta pública de estado por código de seguimiento, sin exponer la tabla
+-- completa via RLS abierta (evita que cualquiera liste todos los pedidos).
+create or replace function public.track_service_request(p_tracking_code text)
+returns table (
+    id uuid,
+    service_type text,
+    status text,
+    pickup_address text,
+    dropoff_address text,
+    price decimal,
+    created_at timestamp with time zone
+) as $$
+    select id, service_type, status, pickup_address, dropoff_address, price, created_at
+    from public.service_requests
+    where tracking_code = p_tracking_code;
+$$ language sql security definer stable;
 
 -- ------------------------------------------------------------
 -- 6. Pagos / liquidaciones al repartidor
