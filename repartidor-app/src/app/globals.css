@@ -1,0 +1,36 @@
+/* Domix Repartidor — design tokens, resets. Layout vive inline en cada pantalla. */
+.dx-app{
+  --bg:#f7f8fa; --sf:#ffffff; --sf2:#eef0f3; --bd:rgba(10,20,40,.10); --bd2:rgba(10,20,40,.06);
+  --tx:#0c1524; --mu:#6b7280; --inv:#0c1524; --invtx:#ffffff;
+  --navy:#10233f; --navyS:#e8ecf3;
+  --green:#1f9d55; --greenS:#e5f6ec;
+  --pink:#e31577; --pinkS:#fde7f0;
+  --amber:#c98a1e; --amberS:#faf0dd;
+  --red:#c8402f; --redS:#fbeceb;
+  --sh:0 10px 34px rgba(10,20,40,.12); --sh2:0 2px 10px rgba(10,20,40,.06);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.dx-app[data-theme="dark"]{
+  --bg:#0a0e16; --sf:#141a24; --sf2:#1c2330; --bd:rgba(255,255,255,.12); --bd2:rgba(255,255,255,.06);
+  --tx:#f4f6f9; --mu:#9aa3b2; --inv:#ffffff; --invtx:#0a0e16;
+  --navy:#1a3560; --navyS:#152238;
+  --green:#33c37a; --greenS:#0f241a;
+  --pink:#f04a9a; --pinkS:#2a1420;
+  --amber:#e9b45f; --amberS:#241c0e;
+  --red:#f0705e; --redS:#2a1512;
+  --sh:0 10px 34px rgba(0,0,0,.6); --sh2:0 2px 10px rgba(0,0,0,.4);
+}
+.dx-app, .dx-app *{box-sizing:border-box; margin:0; padding:0;}
+.dx-app{width:100%; min-height:100dvh; font-family:Manrope,-apple-system,'Helvetica Neue',Helvetica,sans-serif; letter-spacing:-0.01em;}
+.dx-app button{font:inherit; color:inherit; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .2s cubic-bezier(.2,.8,.2,1), background .2s ease, opacity .2s ease;}
+.dx-app button:active{transform:scale(.97); opacity:.92;}
+.dx-app input{font:inherit; color:inherit; background:none; border:0; outline:none;}
+.dx-sb{scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch;}
+.dx-sb::-webkit-scrollbar{display:none; width:0; height:0;}
+@keyframes dxSpin{to{transform:rotate(360deg)}}
+@keyframes dxFade{from{opacity:0}to{opacity:1}}
+@keyframes dxUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.dx-app *{animation-duration:.01ms !important;animation-iteration-count:1 !important}}
+
+html{height:100%;}
+body{margin:0; min-height:100dvh; background:#0a0e16;}

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "domix-repartidor",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "repartidor-app", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}
