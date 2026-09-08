@@ -3,25 +3,23 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNav from '../../components/BottomNav';
-import { Icon, Card, Overline, Button, Chip, EmptyState, Spinner, Field } from '../../components/ui';
+import ModeSwitch from '../../components/ModeSwitch';
+import { Row, Pill, Button, Field, Spinner, EmptyState } from '../../components/ui';
 import { useClientSession } from '../../context/ClientSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
-import ModeSwitch from '../../components/ModeSwitch';
-import ThemeToggle from '../../components/ThemeToggle';
 import { fetchMyRequests, listDemoRequests, serviceInfo, STATUS_STEPS } from '../../lib/services';
+import { money } from '../../lib/pricing';
 
-const money = (n) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
-
-const STATUS_TONE = {
-  requested: ['var(--surface-container)', 'var(--on-surface-variant)'],
-  assigned: ['var(--tertiary-container)', 'var(--on-tertiary-container)'],
-  picked_up: ['var(--primary-container)', 'var(--on-primary-container)'],
-  in_progress: ['var(--primary-container)', 'var(--on-primary-container)'],
-  delivered: ['var(--secondary-container)', 'var(--on-secondary-container)'],
-  cancelled: ['var(--error-container)', 'var(--on-error-container)'],
+const TONE = {
+  requested: 'default',
+  assigned: 'navy',
+  picked_up: 'navy',
+  in_progress: 'navy',
+  delivered: 'green',
+  cancelled: 'red',
 };
 
-export default function MisPedidosPage() {
+export default function ActividadPage() {
   const router = useRouter();
   const { client, ready, saveClient } = useClientSession();
   const { isDemo } = useAppMode();
@@ -47,76 +45,66 @@ export default function MisPedidosPage() {
     setLoading(true);
   };
 
+  const abiertos = rows.filter((r) => !['delivered', 'cancelled'].includes(r.status));
+
   return (
     <>
-      <header className="dx-topbar" style={{ justifyContent: 'space-between' }}>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>Mis pedidos</span>
-        <ThemeToggle compact />
-        <ModeSwitch compact />
-      </header>
+      <div className="sb" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '10px 0 100px', animation: 'trFade .3s ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 18px' }}>
+          <div style={{ font: '800 26px Manrope,sans-serif', letterSpacing: '-.035em' }}>Actividad</div>
+          <ModeSwitch compact />
+        </div>
 
-      <div className="dx-page sc">
         {ready && !client?.phone && !isDemo && (
-          <Card style={{ padding: 16 }}>
-            <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 10 }}>Consulta tus pedidos</Overline>
-            <form onSubmit={buscar} style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-              <Field required label="Tu celular" icon="call" type="tel" placeholder="315 792 4906" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Button full type="submit" icon="search">Ver mis pedidos</Button>
-            </form>
-            <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 12, lineHeight: 1.5, textAlign: 'center' }}>
-              Sin cuenta ni contraseña: usamos tu celular solo para encontrar tus pedidos.
+          <div style={{ padding: '0 16px' }}>
+            <div style={{ borderRadius: 16, background: 'var(--sf)', padding: 18 }}>
+              <div style={{ font: '700 15px Manrope,sans-serif', marginBottom: 4 }}>Consulta tus pedidos</div>
+              <div style={{ font: '500 12.5px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginBottom: 14 }}>
+                Sin cuenta ni contraseña: usamos tu celular solo para encontrarlos.
+              </div>
+              <form onSubmit={buscar} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Field required icon="call" type="tel" placeholder="315 792 4906" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Button type="submit" icon="search">Ver mis pedidos</Button>
+              </form>
             </div>
-          </Card>
+          </div>
         )}
 
-        {loading && client?.phone && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner /></div>}
+        {loading && client?.phone && <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Spinner /></div>}
 
         {!loading && client?.phone && rows.length === 0 && (
           <EmptyState
             icon="receipt_long"
             title="Aún no tienes pedidos"
             body="Cuando pidas un servicio, aquí verás su estado y su código de seguimiento."
-            action={<Button icon="add" color="var(--primary)" onClick={() => router.push('/pedir')}>Pedir un servicio</Button>}
+            action={<Button full={false} icon="add" onClick={() => router.push('/pedir')}>Pedir un servicio</Button>}
           />
         )}
 
-        {rows.map((r) => {
-          const info = serviceInfo(r.service_type);
-          const [bg, fg] = STATUS_TONE[r.status] || STATUS_TONE.requested;
-          const label = r.status === 'cancelled' ? 'Cancelado' : STATUS_STEPS.find((s) => s.id === r.status)?.label || r.status;
-          return (
-            <Card key={r.id} style={{ padding: 0, marginBottom: 11, overflow: 'hidden' }}>
-              <button onClick={() => router.push(`/seguimiento/${r.tracking_code}`)} style={{ width: '100%', padding: 15, textAlign: 'left', background: 'transparent' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ width: 44, height: 44, borderRadius: 'var(--sh-sm)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                    <Icon name={info.icon} size={21} color="var(--on-primary-container)" />
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {rows.map((r) => {
+            const info = serviceInfo(r.service_type);
+            const label = r.status === 'cancelled' ? 'Cancelado' : STATUS_STEPS.find((s) => s.id === r.status)?.label || r.status;
+            return (
+              <Row
+                key={r.id || r.tracking_code}
+                image={info.img}
+                title={info.label}
+                subtitle={r.dropoff_address}
+                onClick={() => router.push(`/seguimiento/${r.tracking_code}`)}
+                right={
+                  <span style={{ flex: 'none', textAlign: 'right' }}>
+                    <span style={{ display: 'block', font: '800 15px Manrope,sans-serif', letterSpacing: '-.02em' }}>{money(r.price)}</span>
+                    <span style={{ display: 'block', marginTop: 5 }}><Pill tone={TONE[r.status]}>{label}</Pill></span>
                   </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontWeight: 700, fontSize: 14.5 }}>{info.label}</span>
-                    <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
-                      #{r.tracking_code} · {new Date(r.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </span>
-                  <span className="dsp" style={{ fontWeight: 800, fontSize: 17 }}>{money(r.price)}</span>
-                </div>
-
-                <div style={{ display: 'flex', gap: 9, alignItems: 'center', fontSize: 12.5, fontWeight: 600, color: 'var(--on-surface-variant)', marginTop: 12 }}>
-                  <Icon name="location_on" size={16} />
-                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.dropoff_address}</span>
-                </div>
-
-                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center' }}>
-                  <Chip bg={bg} color={fg}>{label}</Chip>
-                  <span style={{ flex: 1 }} />
-                  <Icon name="chevron_right" size={20} color="var(--outline)" />
-                </div>
-              </button>
-            </Card>
-          );
-        })}
+                }
+              />
+            );
+          })}
+        </div>
       </div>
 
-      <BottomNav badges={{ '/pedidos': rows.filter((r) => !['delivered', 'cancelled'].includes(r.status)).length }} />
+      <BottomNav badges={{ '/pedidos': abiertos.length }} />
     </>
   );
 }

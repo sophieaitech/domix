@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import BottomNav from '../../../components/BottomNav';
 import MapView from '../../../components/MapView';
-import { Icon, Card, HeroCard, Overline, Button, Chip, Spinner, EmptyState } from '../../../components/ui';
+import { Icon, TopBack, Button, Pill, Spinner, EmptyState } from '../../../components/ui';
 import { useAppMode } from '../../../context/AppModeProvider';
 import { trackRequest, loadDemoRequest, serviceInfo, STATUS_STEPS } from '../../../lib/services';
 import { routeBetween } from '../../../lib/geo';
@@ -37,7 +36,6 @@ export default function SeguimientoPage() {
     return () => { alive = false; clearInterval(t); };
   }, [code, isDemo]);
 
-  /* Aviso al cliente cuando el pedido cambia de estado. */
   useEffect(() => {
     if (!req?.status || req.status === lastStatus) return;
     if (lastStatus !== null) {
@@ -65,133 +63,144 @@ export default function SeguimientoPage() {
 
   return (
     <>
-      <header className="dx-topbar">
-        <button onClick={() => router.push('/')} style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-          <Icon name="arrow_back" size={20} />
-        </button>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 22 }}>Tu pedido</span>
-      </header>
+      <TopBack title="Tu pedido" onBack={() => router.push('/')} />
 
-      <div className="dx-page sc">
-        {req === undefined && !error && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner /></div>}
+      <div className="sb" style={{ flex: 1, overflowY: 'auto', padding: '0 0 30px', animation: 'trFade .3s ease' }}>
+        {req === undefined && !error && <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Spinner /></div>}
 
         {(error || req === null) && (
           <EmptyState
             icon="search_off"
             title="No encontramos el pedido"
-            body={`Ningún pedido con el código ${code}. Revisa el código o escríbenos por WhatsApp.`}
-            action={<Button icon="chat" color="var(--secondary)" onClick={() => window.open(WHATSAPP, '_blank')}>Escribir por WhatsApp</Button>}
+            body={`Ningún pedido con el código ${code}. Revisa el código o escríbenos.`}
+            action={<Button full={false} variant="green" icon="chat" onClick={() => window.open(WHATSAPP, '_blank')}>Escribir por WhatsApp</Button>}
           />
         )}
 
         {req && (
           <>
-            <HeroCard glow={req.status === 'delivered' ? 'green' : 'orange'}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Código de seguimiento</Overline>
-                <span style={{ display: 'flex', gap: 6 }}>
-                  {req.turbo && <Chip icon="bolt" bg="rgba(255,255,255,.18)" color="#C8E6B4">TURBO</Chip>}
-                  <Chip icon={info.icon} bg="rgba(255,255,255,.12)" color="#fff">{info.label}</Chip>
+            {/* Mapa a sangre, como en las apps de viaje */}
+            {(pickup || dropoff) && (
+              <MapView
+                height={250}
+                pickup={pickup}
+                dropoff={dropoff}
+                courier={courier}
+                route={route}
+                style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--bd)' }}
+              />
+            )}
+
+            <div style={{ padding: '18px 16px 0' }}>
+              {/* Estado actual */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={info.img} alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />
                 </span>
-              </div>
-              <div className="dsp" style={{ fontWeight: 800, fontSize: 30, letterSpacing: '.06em', marginTop: 6 }}>#{req.tracking_code || code}</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 6, lineHeight: 1.45 }}>
-                {cancelled ? 'Este pedido fue cancelado.' : STATUS_STEPS[stepIndex]?.desc}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ font: '800 20px Manrope,sans-serif', letterSpacing: '-.03em' }}>
+                    {cancelled ? 'Pedido cancelado' : STATUS_STEPS[stepIndex]?.label}
+                  </div>
+                  <div style={{ font: '500 12.5px/1.4 Manrope,sans-serif', color: 'var(--mu)', marginTop: 2 }}>
+                    {cancelled ? 'Este pedido fue cancelado.' : STATUS_STEPS[stepIndex]?.desc}
+                  </div>
+                </div>
+                {req.turbo && <Pill icon="bolt" tone="navy">TURBO</Pill>}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.13)' }}>
-                <span style={{ flex: 1 }}>
-                  <Overline style={{ color: 'rgba(255,255,255,.5)', fontSize: 9.5 }}>Tarifa</Overline>
-                  <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 21, marginTop: 2 }}>{money(req.price)}</span>
-                </span>
+              {/* Datos del pedido */}
+              <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
+                <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
+                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>CÓDIGO</div>
+                  <div style={{ font: "700 15px 'IBM Plex Mono',monospace", marginTop: 4 }}>#{req.tracking_code || code}</div>
+                </div>
+                <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
+                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>TARIFA</div>
+                  <div style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>{money(req.price)}</div>
+                </div>
                 {req.eta_minutes > 0 && req.status !== 'delivered' && (
-                  <span style={{ textAlign: 'right' }}>
-                    <Overline style={{ color: 'rgba(255,255,255,.5)', fontSize: 9.5 }}>Llega en</Overline>
-                    <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 21, marginTop: 2 }}>{req.eta_minutes} min</span>
-                  </span>
+                  <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
+                    <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>LLEGA EN</div>
+                    <div style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>{req.eta_minutes} min</div>
+                  </div>
                 )}
               </div>
-            </HeroCard>
 
-            {/* Seguimiento en vivo sobre el mapa */}
-            {(pickup || dropoff) && (
-              <Card style={{ padding: 0, marginTop: 14, overflow: 'hidden' }} elevation={2}>
-                <div style={{ padding: '11px 15px', display: 'flex', alignItems: 'center', gap: 9, background: courier ? 'var(--secondary-container)' : 'var(--surface-container)' }}>
-                  {courier && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--secondary)', animation: 'dxGlow 1.2s infinite' }} />}
-                  <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', color: courier ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)' }}>
-                    {courier ? `${req.courier_name || 'Tu repartidor'} EN CAMINO` : 'RUTA DEL PEDIDO'}
+              {/* Repartidor asignado */}
+              {req.courier_name && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: 14, borderRadius: 14, border: '1px solid var(--bd)', marginBottom: 18 }}>
+                  <span style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 15px Manrope,sans-serif', flex: 'none' }}>
+                    {req.courier_name[0]?.toUpperCase()}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', font: '700 14.5px Manrope,sans-serif' }}>{req.courier_name}</span>
+                    <span style={{ display: 'block', font: '500 12px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>Tu repartidor Domix</span>
+                  </span>
+                  <a href={WHATSAPP} target="_blank" rel="noreferrer" style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--greenS)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="chat" size={20} fill color="var(--green)" />
+                  </a>
+                </div>
+              )}
+
+              {/* Línea de estado */}
+              {!cancelled && (
+                <div style={{ borderRadius: 16, border: '1px solid var(--bd)', padding: 16, marginBottom: 18 }}>
+                  {STATUS_STEPS.map((step, i) => {
+                    const done = i <= stepIndex;
+                    const current = i === stepIndex;
+                    const last = i === STATUS_STEPS.length - 1;
+                    return (
+                      <div key={step.id} style={{ display: 'flex', gap: 13 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
+                          <span style={{
+                            width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: done ? 'var(--green)' : 'var(--sf2)',
+                            animation: current ? 'trRing 1.8s infinite' : undefined,
+                          }}>
+                            <Icon name={done && !current ? 'check' : step.icon} size={16} fill color={done ? '#fff' : 'var(--mu)'} />
+                          </span>
+                          {!last && <span style={{ width: 2, flex: 1, minHeight: 20, background: i < stepIndex ? 'var(--green)' : 'var(--bd)' }} />}
+                        </div>
+                        <div style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
+                          <div style={{ font: `${current ? 800 : 700} 14px Manrope,sans-serif`, color: done ? 'var(--tx)' : 'var(--mu)' }}>{step.label}</div>
+                          <div style={{ font: '500 11.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>{step.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Ruta */}
+              <div style={{ borderRadius: 16, border: '1px solid var(--bd)', padding: 16, marginBottom: 18 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', border: '3px solid var(--tx)' }} />
+                    <span style={{ width: 2, flex: 1, minHeight: 22, background: 'var(--bd)' }} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, paddingBottom: 14 }}>
+                    <span style={{ display: 'block', font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>RECOGER EN</span>
+                    <span style={{ display: 'block', font: '700 13.5px Manrope,sans-serif', marginTop: 3 }}>{req.pickup_address}</span>
                   </span>
                 </div>
-                <MapView
-                  height={230}
-                  pickup={pickup}
-                  dropoff={dropoff}
-                  courier={courier}
-                  route={route}
-                  style={{ borderRadius: 0, border: 'none' }}
-                />
-              </Card>
-            )}
-
-            {!cancelled && (
-              <Card style={{ padding: 16, marginTop: 14 }}>
-                <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 12 }}>Estado del pedido</Overline>
-                {STATUS_STEPS.map((step, i) => {
-                  const done = i <= stepIndex;
-                  const current = i === stepIndex;
-                  const last = i === STATUS_STEPS.length - 1;
-                  return (
-                    <div key={step.id} style={{ display: 'flex', gap: 13 }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
-                        <span style={{
-                          width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: done ? (current ? 'var(--tertiary)' : 'var(--secondary)') : 'var(--surface-container)',
-                          animation: current ? 'dxPulse 2.2s infinite' : undefined,
-                        }}>
-                          <Icon name={done && !current ? 'check' : step.icon} size={17} fill color={done ? '#fff' : 'var(--outline)'} />
-                        </span>
-                        {!last && <span style={{ width: 2, flex: 1, minHeight: 22, background: i < stepIndex ? 'var(--secondary)' : 'var(--outline-variant)' }} />}
-                      </div>
-                      <div style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: current ? 800 : 700, color: done ? 'var(--on-surface)' : 'var(--on-surface-variant)' }}>{step.label}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>{step.desc}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </Card>
-            )}
-
-            <Card style={{ padding: 16, marginTop: 14 }}>
-              <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 12 }}>Ruta</Overline>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
-                  <span style={{ width: 11, height: 11, borderRadius: '50%', border: '3px solid var(--primary)' }} />
-                  <span style={{ width: 2, flex: 1, minHeight: 24, background: 'var(--outline-variant)' }} />
-                </span>
-                <span style={{ flex: 1, minWidth: 0, paddingBottom: 14 }}>
-                  <Overline style={{ color: 'var(--on-surface-variant)', fontSize: 9.5 }}>Recoger en</Overline>
-                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{req.pickup_address}</span>
-                </span>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--green)', flex: 'none', marginTop: 4 }} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>ENTREGAR EN</span>
+                    <span style={{ display: 'block', font: '700 13.5px Manrope,sans-serif', marginTop: 3 }}>{req.dropoff_address}</span>
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: 'var(--primary)', flex: 'none', marginTop: 4 }} />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <Overline style={{ color: 'var(--on-surface-variant)', fontSize: 9.5 }}>Entregar en</Overline>
-                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{req.dropoff_address}</span>
-                </span>
-              </div>
-            </Card>
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-              <Button variant="outlined" icon="chat" onClick={() => window.open(WHATSAPP, '_blank')} style={{ flex: 1, padding: 0 }}>Ayuda</Button>
-              <Button icon="add" onClick={() => router.push('/pedir')} style={{ flex: 1, padding: 0 }}>Pedir otro</Button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button variant="soft" onClick={() => window.open(WHATSAPP, '_blank')} icon="chat">Ayuda</Button>
+                <Button onClick={() => router.push('/pedir')} icon="add">Pedir otro</Button>
+              </div>
             </div>
           </>
         )}
       </div>
-
-      <BottomNav />
     </>
   );
 }

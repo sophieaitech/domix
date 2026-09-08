@@ -2,11 +2,11 @@ import { supabase } from './supabaseClient';
 import { pointAlong } from './geo';
 
 export const SERVICES = [
-  { value: 'mensajeria', label: 'Mensajería', desc: 'Documentos, cartas y correspondencia', icon: 'mail', from: 6000 },
-  { value: 'autorizacion_medica', label: 'Autorizaciones médicas', desc: 'Trámites en EPS y clínicas', icon: 'medical_information', from: 8000 },
-  { value: 'encomienda', label: 'Encomiendas', desc: 'Paquetes y mercancías a nivel local', icon: 'inventory_2', from: 8000 },
-  { value: 'domicilio', label: 'Domicilios', desc: 'Restaurantes, tiendas y farmacias', icon: 'moped', from: 6000 },
-  { value: 'mandado', label: 'Mandados', desc: 'Compras, pagos y diligencias', icon: 'shopping_bag', from: 7000 },
+  { value: 'mensajeria', label: 'Mensajería', desc: 'Documentos, cartas y correspondencia', icon: 'mail', img: '/assets/svc-moto.png', from: 6000 },
+  { value: 'autorizacion_medica', label: 'Autorizaciones médicas', desc: 'Trámites en EPS y clínicas', icon: 'medical_information', img: '/assets/svc-hora.png', from: 8000 },
+  { value: 'encomienda', label: 'Encomiendas', desc: 'Paquetes y mercancías a nivel local', icon: 'inventory_2', img: '/assets/svc-envio.png', from: 8000 },
+  { value: 'domicilio', label: 'Domicilios', desc: 'Restaurantes, tiendas y farmacias', icon: 'moped', img: '/assets/svc-carro.png', from: 6000 },
+  { value: 'mandado', label: 'Mandados', desc: 'Compras, pagos y diligencias', icon: 'shopping_bag', img: '/assets/svc-reserva.png', from: 7000 },
 ];
 
 export function serviceInfo(value) {

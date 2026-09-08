@@ -5,22 +5,23 @@ import { Icon } from './ui';
 
 const TABS = [
   { name: 'Inicio', path: '/', icon: 'home' },
-  { name: 'Pedir', path: '/pedir', icon: 'add_circle' },
-  { name: 'Mis pedidos', path: '/pedidos', icon: 'receipt_long' },
+  { name: 'Servicios', path: '/servicios', icon: 'apps' },
+  { name: 'Actividad', path: '/pedidos', icon: 'receipt_long' },
+  { name: 'Cuenta', path: '/cuenta', icon: 'person' },
 ];
 
+/* Barra flotante tipo píldora, como la de Turapp. */
 export default function BottomNav({ badges = {} }) {
   const router = useRouter();
   const pathname = usePathname();
 
   return (
-    <nav
+    <div
       style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 80,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        height: 74, paddingBottom: 8,
-        background: 'rgba(251,250,248,.92)', backdropFilter: 'blur(18px)',
-        borderTop: '1px solid var(--outline-variant)',
+        position: 'absolute', bottom: 16, left: 12, right: 12, height: 62,
+        borderRadius: 99, background: 'var(--bg)',
+        boxShadow: 'var(--sh3), 0 0 0 1px var(--bd2)',
+        display: 'flex', alignItems: 'center', padding: 5, zIndex: 50,
       }}
     >
       {TABS.map((tab) => {
@@ -30,20 +31,23 @@ export default function BottomNav({ badges = {} }) {
           <button
             key={tab.path}
             onClick={() => router.push(tab.path)}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingTop: 8, background: 'transparent' }}
+            style={{
+              flex: 1, height: 52, borderRadius: 99, position: 'relative',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              background: active ? 'var(--sf2)' : 'transparent',
+              color: active ? 'var(--tx)' : 'var(--mu)',
+            }}
           >
-            <span style={{ position: 'relative', width: 62, height: 32, borderRadius: 'var(--sh-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'var(--primary-container)' : 'transparent', transition: 'background .2s var(--ease)' }}>
-              <Icon name={tab.icon} size={22} fill={active} color={active ? 'var(--on-primary-container)' : 'var(--on-surface-variant)'} />
-              {badge > 0 && (
-                <span style={{ position: 'absolute', top: 1, right: 12, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 'var(--sh-full)', background: 'var(--tertiary)', color: '#fff', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {badge}
-                </span>
-              )}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: active ? 800 : 600, color: active ? 'var(--on-surface)' : 'var(--on-surface-variant)' }}>{tab.name}</span>
+            <Icon name={tab.icon} size={21} fill={active} />
+            <span style={{ font: '700 10.5px Manrope,sans-serif' }}>{tab.name}</span>
+            {badge > 0 && (
+              <span style={{ position: 'absolute', top: 7, right: '50%', marginRight: -20, minWidth: 17, height: 17, padding: '0 4px', borderRadius: 99, background: 'var(--green)', color: '#fff', font: '800 10px Manrope,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {badge}
+              </span>
+            )}
           </button>
         );
       })}
-    </nav>
+    </div>
   );
 }

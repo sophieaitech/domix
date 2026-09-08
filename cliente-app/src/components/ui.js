@@ -1,161 +1,159 @@
 'use client';
 
-/* Kit de UI Material 3 con la identidad Domix. Compartido por las pantallas. */
+/* Kit de UI estilo Turapp: blanco, texto casi negro, CTA negro,
+   verde Domix como acento. Los layouts van inline en cada pantalla. */
 
 export function Icon({ name, size = 20, fill = false, color, style }) {
   return <span className={`mi${fill ? ' mi-fill' : ''}`} style={{ fontSize: size, color, ...style }}>{name}</span>;
 }
 
-export function Card({ children, style, tone = 'lowest', elevation = 1, ...rest }) {
-  const bg = { lowest: 'var(--surface-lowest)', low: 'var(--surface-low)', container: 'var(--surface-container)' }[tone];
+/* Marca "DomiX" con el punto verde, como el wordmark de Turapp. */
+export function Wordmark({ size = 23 }) {
   return (
-    <div
-      style={{
-        background: bg, borderRadius: 'var(--sh-lg)', border: '1px solid var(--outline-variant)',
-        boxShadow: `var(--elev-${elevation})`, ...style,
-      }}
-      {...rest}
-    >
-      {children}
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2.5 }}>
+      <div style={{ font: `800 ${size}px/1 Manrope,sans-serif`, letterSpacing: '-.05em' }}>
+        Domi<span style={{ color: 'var(--green)' }}>X</span>
+      </div>
+      <div style={{ width: size * 0.26, height: size * 0.26, borderRadius: '50%', background: 'var(--green)', marginBottom: size * 0.17 }} />
     </div>
   );
 }
 
-/* Tarjeta hero en azul de marca, con halo de color (naranja o verde). */
-export function HeroCard({ children, glow = 'green', style }) {
-  const glowColor = glow === 'navy' ? 'rgba(46,123,196,.26)' : 'rgba(78,163,60,.24)';
+export function SectionTitle({ children, action }) {
   return (
-    <div
-      style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 'var(--sh-xl)', padding: 20,
-        background: 'linear-gradient(150deg,#2A241E 0%,#17140F 58%,#12100D 100%)',
-        color: '#F6F5F2', boxShadow: 'var(--elev-4)', ...style,
-      }}
-    >
-      <div style={{ position: 'absolute', right: -50, top: -66, width: 208, height: 208, borderRadius: '50%', background: `radial-gradient(circle,${glowColor},transparent 70%)` }} />
-      <div style={{ position: 'absolute', left: -60, bottom: -80, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle,rgba(46,123,196,.14),transparent 70%)' }} />
-      <div style={{ position: 'relative' }}>{children}</div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', marginBottom: 12 }}>
+      <div style={{ font: '800 19px Manrope,sans-serif', letterSpacing: '-.03em' }}>{children}</div>
+      {action}
     </div>
   );
 }
 
-export function Overline({ children, style }) {
-  return <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', ...style }}>{children}</div>;
-}
-
-/* Botón MD3: filled | tonal | outlined | text */
-export function Button({ children, variant = 'filled', icon, full, color, style, ...rest }) {
+/* Botón principal: negro sólido, como el de Turapp. */
+export function Button({ children, variant = 'solid', icon, full = true, style, ...rest }) {
   const base = {
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 50, padding: '0 22px', borderRadius: 'var(--sh-full)',
-    fontSize: 14.5, fontWeight: 700, width: full ? '100%' : undefined,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+    height: 54, borderRadius: 14, font: '700 16px Manrope,sans-serif',
+    width: full ? '100%' : undefined, padding: full ? undefined : '0 22px',
   };
   const variants = {
-    filled: { background: color || 'var(--primary)', color: 'var(--on-primary)', boxShadow: 'var(--elev-1)' },
-    tonal: { background: 'var(--primary-container)', color: 'var(--on-primary-container)' },
-    outlined: { background: 'transparent', color: color || 'var(--primary)', border: '1px solid var(--outline)' },
-    text: { background: 'transparent', color: color || 'var(--primary)', padding: '0 12px' },
+    solid: { background: 'var(--inv)', color: 'var(--invtx)' },
+    green: { background: 'var(--green)', color: '#fff' },
+    soft: { background: 'var(--sf)', color: 'var(--tx)' },
+    outline: { background: 'transparent', color: 'var(--tx)', border: '1.5px solid var(--bd)' },
   };
   return (
     <button style={{ ...base, ...variants[variant], ...style }} {...rest}>
-      {icon && <Icon name={icon} size={19} fill />}
+      {icon && <Icon name={icon} size={20} fill />}
       {children}
     </button>
   );
 }
 
-/* Chip de estado / asistente */
-export function Chip({ children, icon, bg = 'var(--surface-container)', color = 'var(--on-surface-variant)', style }) {
+/* Fila de lista con borde fino: el patrón de Atajos y Servicios. */
+export function Row({ icon, iconBg, image, title, subtitle, note, right, onClick, style }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 11px', borderRadius: 'var(--sh-full)', background: bg, color, fontSize: 11.5, fontWeight: 800, ...style }}>
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 13, width: '100%', padding: '13px 15px',
+        borderRadius: 14, background: 'var(--bg)', border: '1px solid var(--bd)', textAlign: 'left', ...style,
+      }}
+    >
+      {image ? (
+        <span style={{ width: 46, height: 42, borderRadius: 10, background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+        </span>
+      ) : icon ? (
+        <span style={{ width: 38, height: 38, borderRadius: 10, background: iconBg || 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <Icon name={icon} size={19} color={iconBg ? 'var(--green)' : 'var(--tx)'} />
+        </span>
+      ) : null}
+
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', font: '700 14.5px Manrope,sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+        {subtitle && <span style={{ display: 'block', font: '500 12px/1.35 Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>{subtitle}</span>}
+        {note && <span style={{ display: 'block', font: '600 12px Manrope,sans-serif', color: 'var(--green)', marginTop: 2 }}>{note}</span>}
+      </span>
+
+      {right}
+    </button>
+  );
+}
+
+/* Píldora circular con ilustración 3D, como "Para ti". */
+export function ForYouItem({ image, label, onClick }) {
+  return (
+    <button onClick={onClick} style={{ flex: 'none', width: 78, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
+      <span style={{ width: 78, height: 78, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={image} alt="" style={{ width: 58, height: 58, objectFit: 'contain' }} />
+      </span>
+      <span style={{ font: '600 12.5px/1.25 Manrope,sans-serif', textAlign: 'center' }}>{label}</span>
+    </button>
+  );
+}
+
+export function Pill({ children, icon, tone = 'default', style }) {
+  const tones = {
+    default: { background: 'var(--sf)', color: 'var(--mu)' },
+    green: { background: 'var(--greenS)', color: 'var(--green)' },
+    navy: { background: 'var(--navyS)', color: 'var(--navy)' },
+    amber: { background: 'var(--amberS)', color: 'var(--amber)' },
+    red: { background: 'var(--redS)', color: 'var(--red)' },
+    solid: { background: 'var(--inv)', color: 'var(--invtx)' },
+  };
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 11px', borderRadius: 99, font: '700 11.5px Manrope,sans-serif', ...tones[tone], ...style }}>
       {icon && <Icon name={icon} size={14} fill />}
       {children}
     </span>
   );
 }
 
-/* Tile de estadística con icono en contenedor tonal */
-export function StatTile({ icon, value, label, tone = 'primary' }) {
-  const tones = {
-    primary: ['var(--primary-container)', 'var(--on-primary-container)'],
-    secondary: ['var(--secondary-container)', 'var(--on-secondary-container)'],
-    tertiary: ['var(--tertiary-container)', 'var(--on-tertiary-container)'],
-  };
-  const [bg, fg] = tones[tone];
-  return (
-    <Card style={{ padding: 14 }}>
-      <span style={{ width: 34, height: 34, borderRadius: 'var(--sh-sm)', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={18} fill color={fg} />
-      </span>
-      <div className="dsp" style={{ fontWeight: 800, fontSize: 19, marginTop: 10 }}>{value}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--on-surface-variant)', marginTop: 2 }}>{label}</div>
-    </Card>
-  );
-}
-
-export function EmptyState({ icon, title, body, action }) {
-  return (
-    <Card style={{ padding: '32px 22px', textAlign: 'center' }}>
-      <span style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-        <Icon name={icon} size={27} color="var(--on-surface-variant)" />
-      </span>
-      <div className="dsp" style={{ fontWeight: 700, fontSize: 16.5, marginTop: 14 }}>{title}</div>
-      <div style={{ fontSize: 13, color: 'var(--on-surface-variant)', lineHeight: 1.5, marginTop: 5 }}>{body}</div>
-      {action && <div style={{ marginTop: 16 }}>{action}</div>}
-    </Card>
-  );
-}
-
-export function Spinner({ size = 44, color = 'var(--tertiary)' }) {
-  return <div style={{ width: size, height: size, borderRadius: '50%', border: '3px solid var(--surface-high)', borderTopColor: color, animation: 'dxSpin 1s linear infinite' }} />;
-}
-
-/* Switch MD3 con marca de verificación al activarse */
-export function Switch({ checked, onChange, disabled }) {
-  return (
-    <button
-      onClick={onChange}
-      disabled={disabled}
-      role="switch"
-      aria-checked={checked}
-      style={{
-        width: 52, height: 32, borderRadius: 'var(--sh-full)', padding: 3, display: 'flex', flex: 'none',
-        background: checked ? 'var(--secondary)' : 'rgba(255,255,255,.22)',
-        border: checked ? '2px solid var(--secondary)' : '2px solid rgba(255,255,255,.34)',
-      }}
-    >
-      <span
-        style={{
-          width: checked ? 24 : 18, height: checked ? 24 : 18, borderRadius: '50%', background: '#fff',
-          margin: checked ? 0 : 3, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'transform .22s var(--ease-out), width .18s var(--ease), height .18s var(--ease), margin .18s var(--ease)',
-          transform: checked ? 'translateX(20px)' : 'translateX(0)',
-        }}
-      >
-        {checked && <Icon name="check" size={14} color="var(--secondary)" style={{ fontWeight: 700 }} />}
-      </span>
-    </button>
-  );
-}
-
-/* Campo de texto MD3 (outlined) */
 export function Field({ label, icon, value, onChange, placeholder, type = 'text', rows, required }) {
   const Tag = rows ? 'textarea' : 'input';
   return (
     <label style={{ display: 'block' }}>
-      <span style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: 'var(--on-surface-variant)', marginBottom: 6, letterSpacing: '.02em' }}>{label}</span>
-      <span style={{ display: 'flex', alignItems: rows ? 'flex-start' : 'center', gap: 10, padding: rows ? '12px 14px' : '0 14px', height: rows ? 'auto' : 52, borderRadius: 'var(--sh-sm)', background: 'var(--surface-lowest)', border: '1px solid var(--outline-variant)' }}>
-        {icon && <Icon name={icon} size={19} color="var(--on-surface-variant)" style={{ marginTop: rows ? 2 : 0 }} />}
+      {label && <span style={{ display: 'block', font: '700 12px Manrope,sans-serif', color: 'var(--mu)', marginBottom: 7 }}>{label}</span>}
+      <span style={{ display: 'flex', alignItems: rows ? 'flex-start' : 'center', gap: 10, padding: rows ? '13px 15px' : '0 15px', height: rows ? 'auto' : 54, borderRadius: 13, background: 'var(--sf)' }}>
+        {icon && <Icon name={icon} size={19} color="var(--mu)" style={{ marginTop: rows ? 2 : 0 }} />}
         <Tag
-          required={required}
-          type={rows ? undefined : type}
-          rows={rows}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          style={{ flex: 1, width: '100%', fontSize: 14.5, fontWeight: 600, resize: 'none', lineHeight: 1.45 }}
+          required={required} type={rows ? undefined : type} rows={rows}
+          value={value} onChange={onChange} placeholder={placeholder}
+          style={{ flex: 1, width: '100%', font: '600 15px Manrope,sans-serif', resize: 'none', lineHeight: 1.45 }}
         />
       </span>
     </label>
+  );
+}
+
+export function Spinner({ size = 40, color = 'var(--green)' }) {
+  return <div style={{ width: size, height: size, borderRadius: '50%', border: '3px solid var(--sf2)', borderTopColor: color, animation: 'trSpin 1s linear infinite' }} />;
+}
+
+export function EmptyState({ icon, title, body, action }) {
+  return (
+    <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+      <span style={{ width: 62, height: 62, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+        <Icon name={icon} size={28} color="var(--mu)" />
+      </span>
+      <div style={{ font: '800 18px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 16 }}>{title}</div>
+      <div style={{ font: '500 13.5px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginTop: 6 }}>{body}</div>
+      {action && <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center' }}>{action}</div>}
+    </div>
+  );
+}
+
+/* Cabecera con flecha de volver, para las pantallas internas. */
+export function TopBack({ title, onBack, right }) {
+  return (
+    <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 13, padding: '10px 16px 14px' }}>
+      <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+        <Icon name="arrow_back" size={20} />
+      </button>
+      <div style={{ flex: 1, minWidth: 0, font: '800 21px Manrope,sans-serif', letterSpacing: '-.03em' }}>{title}</div>
+      {right}
+    </div>
   );
 }

@@ -2,13 +2,12 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import BottomNav from '../../components/BottomNav';
 import AddressField from '../../components/AddressField';
 import MapView from '../../components/MapView';
-import { Icon, Card, Overline, Button, Field, Chip, Spinner } from '../../components/ui';
+import { Icon, TopBack, Button, Field, Pill, Spinner } from '../../components/ui';
 import { useClientSession } from '../../context/ClientSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
-import { SERVICES, serviceInfo, createRequest } from '../../lib/services';
+import { SERVICES, createRequest } from '../../lib/services';
 import { quote, etaMinutes, money, DEFAULT_RULES } from '../../lib/pricing';
 import { routeBetween, BUENAVENTURA } from '../../lib/geo';
 import { pushNotify } from '../../lib/notify';
@@ -31,7 +30,6 @@ function PedirForm() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  /* Cuando hay origen y destino con coordenadas, calculamos ruta real y tarifa. */
   useEffect(() => {
     let alive = true;
     if (!pickup.point || !dropoff.point) return setRoute({ coords: [], distanceKm: 0, durationMin: null });
@@ -46,11 +44,11 @@ function PedirForm() {
 
   const q = quote({ distanceKm: route.distanceKm, serviceType: tipo, turbo });
   const eta = route.durationMin ?? etaMinutes(route.distanceKm, turbo);
-  const outOfRange = route.distanceKm > DEFAULT_RULES.coverageRadiusKm;
-  const turboOutOfRange = turbo && route.distanceKm > DEFAULT_RULES.turboRadiusKm;
+  const listo = pickup.address && dropoff.address && form.contact_name && form.contact_phone;
 
   const submit = async (e) => {
     e.preventDefault();
+    if (!listo) return;
     setError('');
     setBusy(true);
 
@@ -97,176 +95,149 @@ function PedirForm() {
 
   return (
     <>
-      <header className="dx-topbar">
-        <button onClick={() => router.push('/')} style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-          <Icon name="arrow_back" size={20} />
-        </button>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 22 }}>Pedir servicio</span>
-      </header>
+      <TopBack title="Pedir servicio" onBack={() => router.push('/')} />
 
-      <form onSubmit={submit} className="dx-page sc" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div>
-          <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 9 }}>¿Qué necesitas?</Overline>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-            {SERVICES.map((s) => {
-              const on = tipo === s.value;
-              return (
-                <button
-                  key={s.value} type="button" onClick={() => setTipo(s.value)}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, padding: 12,
-                    borderRadius: 'var(--sh-md)', textAlign: 'left',
-                    background: on ? 'var(--primary)' : 'var(--surface-lowest)',
-                    color: on ? 'var(--on-primary)' : 'var(--on-surface)',
-                    border: `1px solid ${on ? 'var(--primary)' : 'var(--outline-variant)'}`,
-                    boxShadow: on ? 'var(--elev-2)' : 'none',
-                    gridColumn: s.value === 'mandado' ? 'span 2' : undefined,
-                  }}
-                >
-                  <Icon name={s.icon} size={21} fill={on} color={on ? '#fff' : 'var(--primary)'} />
-                  <span style={{ fontSize: 12.5, fontWeight: 800, lineHeight: 1.2 }}>{s.label}</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, opacity: on ? .85 : .6 }}>desde {money(s.from)}</span>
-                </button>
-              );
-            })}
-          </div>
+      <form onSubmit={submit} className="sb" style={{ flex: 1, overflowY: 'auto', padding: '0 16px 130px', animation: 'trFade .3s ease' }}>
+
+        {/* Tipo de servicio */}
+        <div className="sb" style={{ display: 'flex', gap: 9, overflowX: 'auto', paddingBottom: 18, margin: '0 -16px', paddingLeft: 16, paddingRight: 16 }}>
+          {SERVICES.map((s) => {
+            const on = tipo === s.value;
+            return (
+              <button
+                key={s.value} type="button" onClick={() => setTipo(s.value)}
+                style={{
+                  flex: 'none', width: 96, padding: '12px 8px', borderRadius: 14, textAlign: 'center',
+                  background: on ? 'var(--inv)' : 'var(--sf)', color: on ? 'var(--invtx)' : 'var(--tx)',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.img} alt="" style={{ width: 40, height: 40, objectFit: 'contain', margin: '0 auto 7px', display: 'block' }} />
+                <span style={{ display: 'block', font: '700 11.5px/1.25 Manrope,sans-serif' }}>{s.label}</span>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Direcciones */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 18 }}>
+          <AddressField
+            required allowLocate label="Recoger en" icon="trip_origin"
+            placeholder="Dirección o negocio de origen"
+            value={pickup.address} point={pickup.point} onChange={setPickup}
+          />
+          <AddressField
+            required label="Entregar en" icon="location_on"
+            placeholder="Dirección de destino"
+            value={dropoff.address} point={dropoff.point} onChange={setDropoff}
+          />
+        </div>
+
+        {(pickup.point || dropoff.point) && (
+          <div style={{ marginBottom: 18 }}>
+            <MapView
+              height={168}
+              center={BUENAVENTURA}
+              pickup={pickup.point}
+              dropoff={dropoff.point}
+              route={route.coords}
+              interactive={false}
+              style={{ borderRadius: 16, border: '1px solid var(--bd)' }}
+            />
+          </div>
+        )}
 
         {/* Domix Turbo */}
         <button
           type="button"
           onClick={() => setTurbo((t) => !t)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 'var(--sh-lg)', textAlign: 'left',
-            background: turbo ? 'linear-gradient(135deg,#2E7BC4,#1B4F8F)' : 'var(--surface-lowest)',
-            color: turbo ? '#fff' : 'var(--on-surface)',
-            border: `1.5px solid ${turbo ? 'transparent' : 'var(--outline-variant)'}`,
-            boxShadow: turbo ? '0 8px 22px rgba(27,79,143,.28)' : 'none',
+            display: 'flex', alignItems: 'center', gap: 13, width: '100%', padding: 14, borderRadius: 14,
+            textAlign: 'left', marginBottom: 18,
+            background: turbo ? 'var(--navy)' : 'var(--bg)',
+            color: turbo ? '#fff' : 'var(--tx)',
+            border: `1px solid ${turbo ? 'transparent' : 'var(--bd)'}`,
           }}
         >
-          <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: turbo ? 'rgba(255,255,255,.2)' : 'var(--tertiary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-            <Icon name="bolt" size={22} fill color={turbo ? '#fff' : 'var(--on-tertiary-container)'} />
+          <span style={{ width: 42, height: 42, borderRadius: 12, background: turbo ? 'rgba(255,255,255,.18)' : 'var(--navyS)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+            <Icon name="bolt" size={22} fill color={turbo ? '#fff' : 'var(--navy)'} />
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>Domix Turbo</span>
-            <span style={{ display: 'block', fontSize: 11.5, marginTop: 2, opacity: turbo ? .9 : .65 }}>
-              Prioridad total: el repartidor más cercano sale de inmediato
+            <span style={{ display: 'block', font: '700 14.5px Manrope,sans-serif' }}>Domix Turbo</span>
+            <span style={{ display: 'block', font: '500 12px/1.4 Manrope,sans-serif', opacity: turbo ? 0.85 : 0.6, marginTop: 1 }}>
+              Primero en la fila, en menos de 20 minutos
             </span>
           </span>
           <span style={{ flex: 'none', textAlign: 'right' }}>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>+{money(DEFAULT_RULES.turboFee)}</span>
-            <Icon name={turbo ? 'check_circle' : 'radio_button_unchecked'} size={19} fill={turbo} color={turbo ? '#fff' : 'var(--outline)'} />
+            <span style={{ display: 'block', font: '800 13.5px Manrope,sans-serif' }}>+{money(DEFAULT_RULES.turboFee)}</span>
+            <Icon name={turbo ? 'check_circle' : 'radio_button_unchecked'} size={19} fill={turbo} style={{ marginTop: 2 }} />
           </span>
         </button>
 
-        <Card style={{ padding: 15, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Overline style={{ color: 'var(--on-surface-variant)' }}>Direcciones</Overline>
-          <AddressField
-            required allowLocate label="Recoger en" icon="trip_origin"
-            placeholder="Dirección o negocio de origen"
-            value={pickup.address} point={pickup.point}
-            onChange={setPickup}
-          />
-          <AddressField
-            required label="Entregar en" icon="location_on"
-            placeholder="Dirección de destino"
-            value={dropoff.address} point={dropoff.point}
-            onChange={setDropoff}
-          />
-
-          {(pickup.point || dropoff.point) && (
-            <MapView
-              height={165}
-              center={BUENAVENTURA}
-              pickup={pickup.point}
-              dropoff={dropoff.point}
-              route={route.coords}
-              interactive={false}
-            />
-          )}
-        </Card>
-
-        {/* Tarifa calculada */}
-        <Card style={{ padding: 0, overflow: 'hidden' }} elevation={2}>
-          <div style={{ padding: '13px 15px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: '.05em' }}>
-              <Icon name="calculate" size={17} fill /> TARIFA CALCULADA
-            </span>
-            {calculating ? <Spinner size={18} color="#fff" /> : route.distanceKm > 0 && (
-              <span style={{ fontSize: 12, fontWeight: 700, opacity: .85 }}>{route.distanceKm.toFixed(1)} km · {eta} min</span>
-            )}
-          </div>
-
-          <div style={{ padding: 15 }}>
-            {route.distanceKm === 0 ? (
-              <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', lineHeight: 1.5 }}>
-                Elige las dos direcciones de la lista y calculamos la distancia y el precio exacto.
-                Tarifa mínima {money(DEFAULT_RULES.minFare)}.
-              </div>
-            ) : (
-              <>
-                {q.breakdown.map((b) => (
-                  <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0' }}>
-                    <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: b.tone ? 'var(--tertiary)' : 'var(--on-surface-variant)' }}>{b.label}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: b.tone ? 'var(--tertiary)' : 'var(--on-surface)' }}>{money(b.amount)}</span>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', alignItems: 'center', marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--outline-variant)' }}>
-                  <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800 }}>Total a pagar</span>
-                  <span className="dsp" style={{ fontWeight: 800, fontSize: 26 }}>{money(q.total)}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 7, marginTop: 11, flexWrap: 'wrap' }}>
-                  {q.flags.turbo && <Chip icon="bolt" bg="var(--tertiary-container)" color="var(--on-tertiary-container)">Turbo</Chip>}
-                  {q.flags.night && <Chip icon="dark_mode">Nocturno</Chip>}
-                  {q.flags.surge && <Chip icon="trending_up" bg="var(--tertiary-container)" color="var(--on-tertiary-container)">Alta demanda</Chip>}
-                  <Chip icon="payments" bg="var(--secondary-container)" color="var(--on-secondary-container)">Pago en efectivo</Chip>
-                </div>
-              </>
-            )}
-          </div>
-        </Card>
-
-        {outOfRange && (
-          <div style={{ display: 'flex', gap: 9, padding: 13, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)', color: 'var(--on-tertiary-container)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.45 }}>
-            <Icon name="warning" size={18} fill />
-            Estás fuera del radio de cobertura habitual ({DEFAULT_RULES.coverageRadiusKm} km). Podemos hacerlo, pero te confirmamos por WhatsApp.
-          </div>
-        )}
-        {turboOutOfRange && (
-          <div style={{ display: 'flex', gap: 9, padding: 13, borderRadius: 'var(--sh-sm)', background: 'var(--error-container)', color: 'var(--on-error-container)', fontSize: 12.5, fontWeight: 600, lineHeight: 1.45 }}>
-            <Icon name="bolt" size={18} fill />
-            Domix Turbo cubre hasta {DEFAULT_RULES.turboRadiusKm} km. Este destino se entrega en tiempo normal.
-          </div>
-        )}
-
-        <Card style={{ padding: 15, display: 'flex', flexDirection: 'column', gap: 13 }}>
-          <Overline style={{ color: 'var(--on-surface-variant)' }}>Tus datos</Overline>
-          <Field required label="Nombre" icon="person" placeholder="¿Cómo te llamas?" value={form.contact_name} onChange={set('contact_name')} />
-          <Field required label="Celular (WhatsApp)" icon="call" type="tel" placeholder="315 792 4906" value={form.contact_phone} onChange={set('contact_phone')} />
+        {/* Datos de contacto */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 18 }}>
+          <Field required label="Tu nombre" icon="person" placeholder="¿Cómo te llamas?" value={form.contact_name} onChange={set('contact_name')} />
+          <Field required label="Tu celular (WhatsApp)" icon="call" type="tel" placeholder="315 792 4906" value={form.contact_phone} onChange={set('contact_phone')} />
           <Field label="Detalles (opcional)" icon="notes" rows={3} placeholder="Qué es, referencias, hora preferida…" value={form.description} onChange={set('description')} />
-        </Card>
+        </div>
+
+        {/* Desglose de la tarifa */}
+        <div style={{ borderRadius: 16, background: 'var(--sf)', padding: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ font: '800 15px Manrope,sans-serif', letterSpacing: '-.02em' }}>Tarifa</span>
+            {calculating
+              ? <Spinner size={17} />
+              : route.distanceKm > 0 && <Pill icon="near_me">{route.distanceKm.toFixed(1)} km · {eta} min</Pill>}
+          </div>
+
+          {route.distanceKm === 0 ? (
+            <div style={{ font: '500 12.5px/1.5 Manrope,sans-serif', color: 'var(--mu)' }}>
+              Elige las dos direcciones de la lista y calculamos la distancia y el precio exacto.
+              Tarifa mínima {money(DEFAULT_RULES.minFare)}.
+            </div>
+          ) : (
+            <>
+              {q.breakdown.map((b) => (
+                <div key={b.label} style={{ display: 'flex', gap: 10, padding: '4px 0' }}>
+                  <span style={{ flex: 1, font: '500 12.5px Manrope,sans-serif', color: b.tone ? 'var(--navy)' : 'var(--mu)' }}>{b.label}</span>
+                  <span style={{ font: '700 12.5px Manrope,sans-serif', color: b.tone ? 'var(--navy)' : 'var(--tx)' }}>{money(b.amount)}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'baseline', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--bd)' }}>
+                <span style={{ flex: 1, font: '700 14px Manrope,sans-serif' }}>Total a pagar</span>
+                <span style={{ font: '800 26px Manrope,sans-serif', letterSpacing: '-.03em' }}>{money(q.total)}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap' }}>
+                <Pill icon="payments" tone="green">Pago en efectivo</Pill>
+                {q.flags.turbo && <Pill icon="bolt" tone="navy">Turbo</Pill>}
+                {q.flags.night && <Pill icon="dark_mode" tone="amber">Nocturno</Pill>}
+              </div>
+            </>
+          )}
+        </div>
 
         {error && (
-          <div style={{ display: 'flex', gap: 9, padding: 13, borderRadius: 'var(--sh-sm)', background: 'var(--error-container)', color: 'var(--on-error-container)', fontSize: 12.5, fontWeight: 600 }}>
+          <div style={{ display: 'flex', gap: 9, padding: 13, borderRadius: 13, background: 'var(--redS)', color: 'var(--red)', font: '600 12.5px Manrope,sans-serif', marginBottom: 14 }}>
             <Icon name="error" size={18} fill /> {error}
           </div>
         )}
 
-        <Button full type="submit" icon="send" disabled={busy} color={turbo ? 'var(--secondary)' : 'var(--primary)'}>
-          {busy ? 'Enviando pedido…' : `Pedir ahora · ${money(q.total)}`}
-        </Button>
-
         <div style={{ display: 'flex', justifyContent: 'center', gap: 7 }}>
-          <Chip icon="lock_open">Sin registro</Chip>
-          <Chip icon="schedule">Respuesta inmediata</Chip>
+          <Pill icon="lock_open">Sin registro</Pill>
+          <Pill icon="schedule">Respuesta inmediata</Pill>
         </div>
       </form>
 
-      <BottomNav />
+      {/* Barra fija de acción */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '12px 16px 20px', background: 'var(--bg)', borderTop: '1px solid var(--bd2)', zIndex: 40 }}>
+        <Button onClick={submit} disabled={busy || !listo} icon="arrow_forward">
+          {busy ? 'Enviando pedido…' : `Pedir ahora · ${money(q.total)}`}
+        </Button>
+      </div>
     </>
   );
 }
 
 export default function PedirPage() {
-  return <Suspense fallback={<div className="dx-page" />}><PedirForm /></Suspense>;
+  return <Suspense fallback={<div style={{ flex: 1 }} />}><PedirForm /></Suspense>;
 }

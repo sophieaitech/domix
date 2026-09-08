@@ -3,21 +3,47 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNav from '../components/BottomNav';
-import { Icon, Card, HeroCard, Overline, Chip, Button } from '../components/ui';
-import { useClientSession } from '../context/ClientSessionProvider';
-import { useAppMode } from '../context/AppModeProvider';
 import ModeSwitch from '../components/ModeSwitch';
 import ThemeToggle from '../components/ThemeToggle';
-import { SERVICES, fetchMyRequests, listDemoRequests, serviceInfo, STATUS_STEPS } from '../lib/services';
-import { DEFAULT_RULES } from '../lib/pricing';
+import { Icon, Wordmark, SectionTitle, Row, ForYouItem } from '../components/ui';
+import { useClientSession } from '../context/ClientSessionProvider';
+import { useAppMode } from '../context/AppModeProvider';
+import { SERVICES, fetchMyRequests, listDemoRequests, STATUS_STEPS } from '../lib/services';
+import { money } from '../lib/pricing';
 
-const money = (n) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
 const WHATSAPP = 'https://wa.me/573157924906';
+
+/* Las dos formas de pedir: enviar algo, o que te traigan algo. */
+const TABS = [
+  { id: 'enviar', label: 'Enviar', img: '/assets/svc-envio.png' },
+  { id: 'traer', label: 'Que me traigan', img: '/assets/svc-moto.png' },
+];
+
+const PARA_TI = {
+  enviar: [
+    { name: 'Enviar paquete', img: '/assets/svc-envio.png', tipo: 'encomienda' },
+    { name: 'Mensajería', img: '/assets/svc-moto.png', tipo: 'mensajeria' },
+    { name: 'Autorización médica', img: '/assets/svc-hora.png', tipo: 'autorizacion_medica' },
+    { name: 'Programar', img: '/assets/svc-reserva.png', tipo: 'encomienda' },
+  ],
+  traer: [
+    { name: 'Domicilio', img: '/assets/svc-moto.png', tipo: 'domicilio' },
+    { name: 'Mandado', img: '/assets/svc-carro.png', tipo: 'mandado' },
+    { name: 'Turbo', img: '/assets/svc-hora.png', tipo: 'domicilio', turbo: true },
+    { name: 'Programar', img: '/assets/svc-reserva.png', tipo: 'mandado' },
+  ],
+};
+
+const ATAJOS = [
+  { name: 'Terminal Marítimo', addr: 'Cra. 1 #1-50, Comuna 3, Buenaventura', icon: 'home' },
+  { name: 'Hospital Departamental', addr: 'Cra. 2 #4-40 · autorizaciones médicas', icon: 'local_hospital', note: 'Trámites en el día' },
+];
 
 export default function InicioPage() {
   const router = useRouter();
   const { client, ready } = useClientSession();
   const { isDemo } = useAppMode();
+  const [tab, setTab] = useState('enviar');
   const [activo, setActivo] = useState(null);
   const [pendientes, setPendientes] = useState(0);
 
@@ -37,122 +63,159 @@ export default function InicioPage() {
     fetchMyRequests(client.phone).then(apply).catch(() => {});
   }, [ready, client?.phone, isDemo]);
 
+  const go = (tipo, turbo) => router.push(`/pedir?tipo=${tipo}${turbo ? '&turbo=1' : ''}`);
+
   return (
     <>
-      <header className="dx-topbar" style={{ justifyContent: 'space-between' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 40, height: 40, borderRadius: 'var(--sh-sm)', background: 'linear-gradient(150deg,#2A241E,#17140F)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-            <Icon name="two_wheeler" size={22} fill color="#fff" />
-          </span>
-          <span>
-            <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 19, lineHeight: 1 }}>
-              Domi<span style={{ color: 'var(--secondary)' }}>X</span>
-            </span>
-            <span style={{ display: 'block', fontSize: 9.5, fontWeight: 800, letterSpacing: '.1em', color: 'var(--on-surface-variant)', marginTop: 2 }}>
-              MENSAJERÍA &amp; LOGÍSTICA
-            </span>
-          </span>
-        </span>
-        <ThemeToggle compact />
-        <ModeSwitch compact />
-      </header>
+      <div className="sb" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '4px 0 100px', animation: 'trFade .3s ease' }}>
 
-      <div className="dx-page sc">
-        <HeroCard glow="orange">
-          <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Buenaventura y alrededores</Overline>
-          <div className="dsp" style={{ fontWeight: 800, fontSize: 26, lineHeight: 1.14, marginTop: 8 }}>
-            Tú lo necesitas,<br />nosotros lo llevamos.
+        {/* Marca + acciones */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 16px 14px' }}>
+          <Wordmark />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 'none' }}>
+            <ThemeToggle compact />
+            <ModeSwitch compact />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
-            <Chip icon="bolt" bg="rgba(255,255,255,.12)" color="#A9D98F">Desde $6.000</Chip>
-            <Chip icon="verified_user" bg="rgba(255,255,255,.12)" color="#A9D98F">Seguro y confiable</Chip>
-          </div>
-          <Button full icon="add" color="var(--primary)" onClick={() => router.push('/pedir')} style={{ marginTop: 18 }}>
-            Pedir un servicio
-          </Button>
-        </HeroCard>
+        </div>
 
-        {activo && (
-          <Card
-            elevation={2}
-            style={{ marginTop: 14, padding: 15, borderLeft: '4px solid var(--primary)', cursor: 'pointer' }}
-            onClick={() => router.push(`/seguimiento/${activo.tracking_code}`)}
+        {/* Pestañas Enviar / Que me traigan */}
+        <div style={{ display: 'flex', gap: 26, justifyContent: 'center', padding: '0 16px', borderBottom: '1px solid var(--bd2)', marginBottom: 18 }}>
+          {TABS.map((t) => {
+            const on = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 12px',
+                  borderBottom: `2.5px solid ${on ? 'var(--tx)' : 'transparent'}`,
+                  color: on ? 'var(--tx)' : 'var(--mu)', marginBottom: -1,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={t.img} alt="" style={{ width: 30, height: 30, objectFit: 'contain', filter: on ? 'none' : 'grayscale(1)', opacity: on ? 1 : 0.5 }} />
+                <span style={{ font: '700 16px Manrope,sans-serif', letterSpacing: '-.02em' }}>{t.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Buscador principal */}
+        <div style={{ padding: '0 16px 20px' }}>
+          <button
+            onClick={() => go(tab === 'enviar' ? 'encomienda' : 'domicilio')}
+            style={{ display: 'flex', alignItems: 'center', width: '100%', height: 60, borderRadius: 99, background: 'var(--sf)', padding: '0 6px 0 18px', gap: 12, boxShadow: 'var(--sh2)' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                <Icon name={serviceInfo(activo.service_type).icon} size={21} color="var(--on-tertiary-container)" />
+            <Icon name="search" size={21} />
+            <span style={{ flex: 1, textAlign: 'left', font: '700 17px Manrope,sans-serif', letterSpacing: '-.02em' }}>
+              {tab === 'enviar' ? '¿Qué vas a enviar?' : '¿Qué necesitas?'}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, height: 48, padding: '0 15px', borderRadius: 99, background: 'var(--bg)', boxShadow: 'var(--sh2)' }}>
+              <Icon name="calendar_month" size={16} />
+              <span style={{ font: '700 13.5px Manrope,sans-serif' }}>Después</span>
+            </span>
+          </button>
+        </div>
+
+        {/* Pedido en curso */}
+        {activo && (
+          <div style={{ padding: '0 16px 20px' }}>
+            <button
+              onClick={() => router.push(`/seguimiento/${activo.tracking_code}`)}
+              style={{ display: 'flex', alignItems: 'center', gap: 13, width: '100%', padding: 15, borderRadius: 16, background: 'var(--inv)', color: 'var(--invtx)', textAlign: 'left' }}
+            >
+              <span style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <Icon name="moped" size={22} fill />
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <Overline style={{ color: 'var(--tertiary)', fontSize: 9.5 }}>Pedido en curso</Overline>
-                <span style={{ display: 'block', fontWeight: 700, fontSize: 14, marginTop: 2 }}>
+                <span style={{ display: 'block', font: '600 10.5px Manrope,sans-serif', letterSpacing: '.14em', opacity: 0.55 }}>PEDIDO EN CURSO</span>
+                <span style={{ display: 'block', font: '700 14.5px Manrope,sans-serif', marginTop: 3 }}>
                   {STATUS_STEPS.find((s) => s.id === activo.status)?.desc || 'En proceso'}
                 </span>
-                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>#{activo.tracking_code}</span>
+                <span style={{ display: 'block', font: '500 12px Manrope,sans-serif', opacity: 0.55, marginTop: 1 }}>#{activo.tracking_code}</span>
               </span>
-              <Icon name="chevron_right" size={22} color="var(--outline)" />
-            </div>
-          </Card>
+              <Icon name="chevron_right" size={22} style={{ opacity: 0.6 }} />
+            </button>
+          </div>
         )}
 
-        <button
-          onClick={() => router.push('/pedir?turbo=1')}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 13, marginTop: 12, padding: 15,
-            borderRadius: 'var(--sh-lg)', textAlign: 'left', color: '#fff',
-            background: 'linear-gradient(135deg,#2E7BC4 0%,#1B4F8F 46%,#123B6B 100%)',
-            boxShadow: '0 10px 26px rgba(27,79,143,.3)',
-          }}
+        {/* Para ti */}
+        <SectionTitle
+          action={
+            <button onClick={() => router.push('/servicios')} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="arrow_forward" size={17} />
+            </button>
+          }
         >
-          <span style={{ width: 46, height: 46, borderRadius: 'var(--sh-sm)', background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-            <Icon name="bolt" size={24} fill color="#fff" />
-          </span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', opacity: .85 }}>ENTREGA PRIORITARIA</span>
-            <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 17, marginTop: 2 }}>Domix Turbo</span>
-            <span style={{ display: 'block', fontSize: 11.5, marginTop: 2, opacity: .9 }}>
-              Tu envío primero en la fila · +{money(DEFAULT_RULES.turboFee)}
-            </span>
-          </span>
-          <Icon name="chevron_right" size={22} color="rgba(255,255,255,.85)" />
-        </button>
+          Para ti
+        </SectionTitle>
 
-        <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 10px' }}>Nuestros servicios</Overline>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {SERVICES.map((s) => (
-            <Card key={s.value} style={{ padding: 0, overflow: 'hidden' }}>
-              <button
-                onClick={() => router.push(`/pedir?tipo=${s.value}`)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', textAlign: 'left', background: 'transparent' }}
-              >
-                <span style={{ width: 46, height: 46, borderRadius: 'var(--sh-sm)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                  <Icon name={s.icon} size={23} color="var(--on-primary-container)" />
-                </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontWeight: 800, fontSize: 14.5 }}>{s.label}</span>
-                  <span style={{ display: 'block', fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 2, lineHeight: 1.35 }}>{s.desc}</span>
-                </span>
-                <span style={{ flex: 'none', textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: 9.5, fontWeight: 800, color: 'var(--on-surface-variant)', letterSpacing: '.06em' }}>DESDE</span>
-                  <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 15, color: 'var(--secondary)' }}>{money(s.from)}</span>
-                </span>
-              </button>
-            </Card>
+        <div className="sb" style={{ display: 'flex', gap: 14, overflowX: 'auto', padding: '0 16px 22px' }}>
+          {PARA_TI[tab].map((it) => (
+            <ForYouItem key={it.name} image={it.img} label={it.name} onClick={() => go(it.tipo, it.turbo)} />
           ))}
         </div>
 
-        <Card tone="low" style={{ marginTop: 16, padding: 15, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: 'var(--secondary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-            <Icon name="support_agent" size={21} color="var(--on-secondary-container)" />
-          </span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontWeight: 700, fontSize: 13.5 }}>¿Prefieres WhatsApp?</span>
-            <span style={{ display: 'block', fontSize: 12, color: 'var(--on-surface-variant)', marginTop: 1 }}>315 792 4906 · atención inmediata</span>
-          </span>
-          <a href={WHATSAPP} target="_blank" rel="noreferrer" style={{ flex: 'none' }}>
-            <Icon name="open_in_new" size={19} color="var(--on-surface-variant)" />
+        {/* Atajos */}
+        <SectionTitle>Atajos</SectionTitle>
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24 }}>
+          {ATAJOS.map((a) => (
+            <Row key={a.name} icon={a.icon} title={a.name} subtitle={a.addr} note={a.note} onClick={() => go(tab === 'enviar' ? 'encomienda' : 'domicilio')} />
+          ))}
+          <Row icon="add" title="Guardar un lugar" onClick={() => router.push('/cuenta')} />
+        </div>
+
+        {/* Servicios */}
+        <SectionTitle>Servicios</SectionTitle>
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 24 }}>
+          {SERVICES.map((s) => (
+            <Row
+              key={s.value}
+              image={s.img}
+              title={s.label}
+              subtitle={s.desc}
+              right={
+                <span style={{ flex: 'none', textAlign: 'right' }}>
+                  <span style={{ display: 'block', font: '700 9.5px Manrope,sans-serif', letterSpacing: '.08em', color: 'var(--mu)' }}>DESDE</span>
+                  <span style={{ display: 'block', font: '800 15px Manrope,sans-serif', letterSpacing: '-.02em' }}>{money(s.from)}</span>
+                </span>
+              }
+              onClick={() => go(s.value)}
+            />
+          ))}
+        </div>
+
+        {/* Más formas de usar Domix */}
+        <SectionTitle>Más formas de usar Domix</SectionTitle>
+        <div className="sb" style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 16px' }}>
+          <button
+            onClick={() => go('domicilio', true)}
+            style={{ flex: 'none', width: 214, borderRadius: 16, overflow: 'hidden', background: 'var(--sf)', textAlign: 'left' }}
+          >
+            <div style={{ height: 98, background: 'var(--navy)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', left: -24, bottom: -34, width: 164, height: 164, borderRadius: '50%', border: '13px solid rgba(255,255,255,.15)' }} />
+              <div style={{ position: 'absolute', right: 15, bottom: 14, font: '800 15px Manrope,sans-serif', color: '#fff', letterSpacing: '-.03em' }}>TURBO</div>
+            </div>
+            <div style={{ padding: '12px 14px 15px' }}>
+              <div style={{ font: '700 14px Manrope,sans-serif', marginBottom: 2 }}>Domix Turbo</div>
+              <div style={{ font: '500 11.5px/1.4 Manrope,sans-serif', color: 'var(--mu)' }}>Tu envío primero en la fila, en menos de 20 minutos.</div>
+            </div>
+          </button>
+
+          <a href={WHATSAPP} target="_blank" rel="noreferrer" style={{ flex: 'none', width: 214, borderRadius: 16, overflow: 'hidden', background: 'var(--sf)', color: 'var(--tx)' }}>
+            <div style={{ height: 98, background: 'var(--green)', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="chat" size={40} fill color="rgba(255,255,255,.9)" />
+            </div>
+            <div style={{ padding: '12px 14px 15px' }}>
+              <div style={{ font: '700 14px Manrope,sans-serif', marginBottom: 2 }}>Pide por WhatsApp</div>
+              <div style={{ font: '500 11.5px/1.4 Manrope,sans-serif', color: 'var(--mu)' }}>315 792 4906 · te respondemos al instante.</div>
+            </div>
           </a>
-        </Card>
+        </div>
+
+        <div style={{ textAlign: 'center', font: '500 11px Manrope,sans-serif', color: 'var(--mu)', marginTop: 26 }}>
+          Domix · Mensajería &amp; Logística · Buenaventura
+        </div>
       </div>
 
       <BottomNav badges={{ '/pedidos': pendientes }} />
