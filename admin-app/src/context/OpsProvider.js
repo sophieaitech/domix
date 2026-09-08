@@ -1,0 +1,151 @@
+'use client';
+
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useAppMode } from './AppModeProvider';
+import { buildDemoData, DEMO_COURIERS, makeIncomingRequest } from '../lib/demo';
+import { HOME_BRANCH } from '../lib/cities';
+import { DEFAULT_RULES, autoSurgeFor } from '../lib/pricing';
+import { fetchRequests, fetchCouriers, fetchBranches, assignCourier, setRequestStatus, createRequestFromAdmin, subscribeOps, OPEN_STATUSES } from '../lib/ops';
+import { pushNotify } from '../lib/notify';
+
+const OpsContext = createContext(null);
+const RULES_KEY = 'domix_rules';
+
+export function OpsProvider({ children }) {
+  const { isDemo, ready } = useAppMode();
+
+  const [requests, setRequests] = useState([]);
+  const [couriers, setCouriers] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [rules, setRules] = useState(DEFAULT_RULES);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RULES_KEY);
+      if (saved) setRules({ ...DEFAULT_RULES, ...JSON.parse(saved) });
+    } catch { /* ignorar */ }
+  }, []);
+
+  const saveRules = useCallback((next) => {
+    setRules(next);
+    try { localStorage.setItem(RULES_KEY, JSON.stringify(next)); } catch { /* ignorar */ }
+  }, []);
+
+  /* ---------- Carga según el modo ---------- */
+  const loadLive = useCallback(async () => {
+    try {
+      const [r, c, b] = await Promise.all([fetchRequests(), fetchCouriers(), fetchBranches().catch(() => [])]);
+      setRequests(r);
+      setCouriers(c.map((x) => ({
+        id: x.id,
+        first_name: x.profiles?.first_name, last_name: x.profiles?.last_name, phone_number: x.profiles?.phone_number,
+        status: x.status, work_zone: x.work_zone, rating: x.rating, total_deliveries: x.total_deliveries,
+        payout_account: x.payout_account, branch_id: x.branch_id,
+        lat: x.last_lat, lon: x.last_lon,
+      })));
+      setBranches(b.length ? b : [HOME_BRANCH]);
+    } catch { /* sin red */ } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (isDemo) {
+      setRequests(buildDemoData());
+      setCouriers(DEMO_COURIERS);
+      setBranches([
+        { ...HOME_BRANCH, id: 'demo-b1' },
+        { id: 'demo-b2', name: 'Cali', city: 'Cali', department: 'Valle del Cauca', center_lat: 3.4516, center_lon: -76.532, coverage_radius_km: 10, whatsapp: '573157924906', is_active: false, opened_at: null },
+      ]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    loadLive();
+    const stop = subscribeOps({
+      onRequest: (payload) => {
+        loadLive();
+        if (payload.eventType === 'INSERT') {
+          const r = payload.new;
+          pushNotify('Nuevo pedido en Domix', {
+            body: `${r.contact_name || 'Cliente'} · ${r.dropoff_address || ''}`,
+            tag: `admin-${r.id}`,
+          });
+        }
+      },
+      onCourier: () => loadLive(),
+    });
+    const t = setInterval(loadLive, 20000);
+    return () => { stop(); clearInterval(t); };
+  }, [isDemo, ready, loadLive]);
+
+  /* ---------- Acciones ---------- */
+  const assign = useCallback(async (requestId, courierId) => {
+    if (isDemo) {
+      setRequests((rows) => rows.map((r) => (r.id === requestId
+        ? { ...r, courier_id: courierId, status: 'assigned', assigned_at: new Date().toISOString() } : r)));
+      return;
+    }
+    await assignCourier(requestId, courierId);
+    loadLive();
+  }, [isDemo, loadLive]);
+
+  const advance = useCallback(async (requestId, status) => {
+    if (isDemo) {
+      const stamps = { picked_up: { picked_up_at: new Date().toISOString() }, delivered: { delivered_at: new Date().toISOString() } };
+      setRequests((rows) => rows.map((r) => (r.id === requestId ? { ...r, status, ...(stamps[status] || {}) } : r)));
+      return;
+    }
+    await setRequestStatus(requestId, status);
+    loadLive();
+  }, [isDemo, loadLive]);
+
+  const createRequest = useCallback(async (payload) => {
+    if (isDemo) {
+      const req = { ...makeIncomingRequest(), ...payload, id: `demo-${Math.random().toString(36).slice(2, 10)}` };
+      setRequests((rows) => [req, ...rows]);
+      return { data: req };
+    }
+    const res = await createRequestFromAdmin(payload);
+    loadLive();
+    return res;
+  }, [isDemo, loadLive]);
+
+  /* Simulador: entra un pedido como si lo acabara de pedir un cliente. */
+  const simulateIncoming = useCallback((opts = {}) => {
+    const req = makeIncomingRequest(opts);
+    setRequests((rows) => [req, ...rows]);
+    pushNotify(opts.turbo ? 'Nuevo pedido TURBO' : 'Nuevo pedido', {
+      body: `${req.contact_name} · ${req.dropoff_address}`,
+      tag: `sim-${req.id}`,
+    });
+    return req;
+  }, []);
+
+  /* Surge automático a partir de la carga real de la flota. */
+  const online = couriers.filter((c) => c.status === 'online').length;
+  const busy = couriers.filter((c) => c.status === 'busy').length;
+  const pending = requests.filter((r) => r.status === 'requested').length;
+  const suggestedSurge = autoSurgeFor({ online, busy, pending });
+  const effectiveRules = { ...rules, surge: rules.autoSurge ? suggestedSurge : rules.surge };
+
+  return (
+    <OpsContext.Provider
+      value={{
+        requests, couriers, branches, loading, isDemo,
+        rules, effectiveRules, saveRules, suggestedSurge,
+        assign, advance, createRequest, simulateIncoming, reload: loadLive,
+        setBranches, setCouriers,
+        stats: { online, busy, pending, open: requests.filter((r) => OPEN_STATUSES.includes(r.status)).length },
+      }}
+    >
+      {children}
+    </OpsContext.Provider>
+  );
+}
+
+export function useOps() {
+  const ctx = useContext(OpsContext);
+  if (!ctx) throw new Error('useOps debe usarse dentro de OpsProvider');
+  return ctx;
+}

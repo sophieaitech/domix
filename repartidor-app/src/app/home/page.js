@@ -1,211 +1,284 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import RequireSession from '../../components/RequireSession';
 import BottomNav from '../../components/BottomNav';
-import Icon from '../../components/Icon';
+import IncomingOffer from '../../components/IncomingOffer';
+import MapView from '../../components/MapView';
+import ModeSwitch from '../../components/ModeSwitch';
+import ThemeToggle from '../../components/ThemeToggle';
+import { Icon, Card, HeroCard, Overline, Button, Chip, StatTile, EmptyState, Spinner, Switch } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
-import { fetchNearbyRequests, fetchTodayEarnings, fetchCourierDeliveries, acceptRequest, serviceLabel } from '../../lib/serviceRequests';
+import { useAppMode } from '../../context/AppModeProvider';
+import { fetchNearbyRequests, fetchTodayEarnings, fetchCourierDeliveries, acceptRequest, updateRequestStatus, serviceLabel, SERVICE_ICON } from '../../lib/serviceRequests';
+import { money, etaMinutes } from '../../lib/pricing';
+import { requestNotificationPermission, notificationPermission, pushNotify } from '../../lib/notify';
+import { routeBetween } from '../../lib/geo';
 
-function money(n) {
-  return `$${Math.round(n || 0).toLocaleString('es-CO')}`;
-}
-
-function initials(profile) {
-  const a = profile?.first_name?.[0] || 'D';
-  const b = profile?.last_name?.[0] || '';
-  return (a + b).toUpperCase();
-}
+const ACTIVE = ['assigned', 'picked_up', 'in_progress'];
+const NEXT = { assigned: 'picked_up', picked_up: 'in_progress', in_progress: 'delivered' };
+const NEXT_LABEL = { assigned: 'Ya lo recogí', picked_up: 'Voy en camino', in_progress: 'Entregado' };
 
 function HomeContent() {
-  const { profile, courierProfile, setOnlineStatus } = useCourierSession();
-  const [todayEarnings, setTodayEarnings] = useState(0);
-  const [todayCount, setTodayCount] = useState(0);
-  const [nearby, setNearby] = useState([]);
+  const { profile, courierProfile, setOnlineStatus, courierId, demoRequests, demoAccept, demoAdvance, demoInject } = useCourierSession();
+  const { isDemo } = useAppMode();
+
+  const [live, setLive] = useState([]);
+  const [offer, setOffer] = useState(null);
+  const [route, setRoute] = useState([]);
   const [toggling, setToggling] = useState(false);
-  const [loadingList, setLoadingList] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [perm, setPerm] = useState('default');
+  const seen = useRef(new Set());
 
   const isOnline = courierProfile?.status === 'online';
 
-  const refresh = useCallback(async () => {
-    if (!courierProfile?.id) return;
-    setLoadingList(true);
+  useEffect(() => { setPerm(notificationPermission()); }, []);
+
+  /* ---- Origen de datos según el modo ---- */
+  const rows = isDemo ? demoRequests : live;
+  const mine = rows.filter((r) => r.courier_id === courierId);
+  const active = mine.filter((r) => ACTIVE.includes(r.status));
+  const open = rows.filter((r) => r.status === 'requested');
+  const today = new Date().toDateString();
+  const deliveredToday = mine.filter((r) => r.status === 'delivered' && r.delivered_at && new Date(r.delivered_at).toDateString() === today);
+  const earnings = deliveredToday.reduce((s, r) => s + Number(r.price || 0) + Number(r.tip || 0), 0);
+
+  const loadLive = useCallback(async () => {
+    if (isDemo || !courierId) return;
     try {
-      const [earnings, deliveries, requests] = await Promise.all([
-        fetchTodayEarnings(courierProfile.id),
-        fetchCourierDeliveries(courierProfile.id),
-        isOnline ? fetchNearbyRequests({ lat: null, lon: null }) : Promise.resolve([]),
+      const [mineRows, openRows] = await Promise.all([
+        fetchCourierDeliveries(courierId),
+        isOnline ? fetchNearbyRequests({}) : Promise.resolve([]),
       ]);
-      setTodayEarnings(earnings);
-      const today = new Date().toDateString();
-      setTodayCount(deliveries.filter((d) => d.status === 'delivered' && new Date(d.delivered_at).toDateString() === today).length);
-      setNearby(requests);
-    } catch {
-      // Supabase sin configurar o sin red: se mantienen los valores en cero.
-    } finally {
-      setLoadingList(false);
+      setLive([...mineRows, ...openRows.filter((o) => !mineRows.some((m) => m.id === o.id))]);
+    } catch { /* sin red */ } finally { setLoading(false); }
+  }, [isDemo, courierId, isOnline]);
+
+  useEffect(() => { if (isDemo) setLoading(false); else loadLive(); }, [isDemo, loadLive]);
+  useEffect(() => {
+    if (isDemo || !isOnline) return;
+    const t = setInterval(loadLive, 10000);
+    return () => clearInterval(t);
+  }, [isDemo, isOnline, loadLive]);
+
+  /* ---- Un pedido nuevo abre la oferta a pantalla completa ---- */
+  useEffect(() => {
+    if (!isOnline || offer) return;
+    const fresh = open.find((r) => !seen.current.has(r.id));
+    if (fresh) {
+      seen.current.add(fresh.id);
+      setOffer(fresh);
     }
-  }, [courierProfile?.id, isOnline]);
+  }, [open, isOnline, offer]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  /* ---- Ruta del pedido activo, para el mapa de seguimiento ---- */
+  const current = active[0];
+  useEffect(() => {
+    let alive = true;
+    if (!current?.pickup_point || !current?.dropoff_point) return setRoute([]);
+    routeBetween(current.pickup_point, current.dropoff_point).then((r) => alive && setRoute(r.coords));
+    return () => { alive = false; };
+  }, [current?.id, current?.pickup_point, current?.dropoff_point]);
 
-  const handleToggle = async () => {
-    setToggling(true);
-    await setOnlineStatus(!isOnline);
-    setToggling(false);
+  const toggle = async () => { setToggling(true); await setOnlineStatus(!isOnline); setToggling(false); };
+
+  const accept = async (req) => {
+    setOffer(null);
+    if (isDemo) return demoAccept(req.id);
+    const { error } = await acceptRequest(req.id, courierId);
+    if (!error) loadLive();
   };
 
-  const handleAccept = async (requestId) => {
-    if (!courierProfile?.id) return;
-    const { error } = await acceptRequest(requestId, courierProfile.id);
-    if (!error) refresh();
+  const advance = async (req) => {
+    const next = NEXT[req.status];
+    if (!next) return;
+    if (isDemo) {
+      demoAdvance(req.id, next);
+      if (next === 'delivered') pushNotify('Entrega completada', { body: `${money(req.price)} sumados a tu día`, tag: `fin-${req.id}` });
+      return;
+    }
+    const { error } = await updateRequestStatus(req.id, next);
+    if (!error) loadLive();
   };
 
-  const stats = [
-    { icon: 'payments', color: 'var(--green)', value: money(todayEarnings), label: 'Ganado hoy' },
-    { icon: 'check_circle', color: 'var(--blue)', value: todayCount, label: 'Entregas' },
-    { icon: 'star', color: 'var(--amber)', value: Number(courierProfile?.rating || 5).toFixed(1), label: 'Calificación' },
-  ];
+  const simulate = async (turbo = false) => {
+    if (perm !== 'granted') setPerm(await requestNotificationPermission());
+    const req = demoInject({ turbo });
+    seen.current.add(req.id);
+    setOffer(req);
+  };
+
+  const inits = ((profile?.first_name?.[0] || 'D') + (profile?.last_name?.[0] || '')).toUpperCase();
 
   return (
     <>
-      <div style={{ flex: 'none', padding: '18px 20px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: 'var(--muted)', flex: 'none' }}>
-            {initials(profile)}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="dsp" style={{ fontWeight: 700, fontSize: 18 }}>Hola, {profile?.first_name || 'Repartidor'}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--muted)', fontWeight: 600, marginTop: 1 }}>
-              <Icon name="star" size={14} fill color="var(--amber)" />
-              {Number(courierProfile?.rating || 5).toFixed(1)} · Zona {courierProfile?.work_zone || 'Centro'}
-            </div>
+      <header className="dx-topbar">
+        <span style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--primary-container)', color: 'var(--on-primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, flex: 'none' }}>
+          {inits}
+        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="dsp" style={{ fontWeight: 700, fontSize: 17 }}>Hola, {profile?.first_name || 'Repartidor'}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--on-surface-variant)', fontWeight: 600, marginTop: 1 }}>
+            <Icon name="star" size={13} fill color="var(--tertiary)" />
+            {Number(courierProfile?.rating || 5).toFixed(1)}
+            <span style={{ opacity: .5 }}>·</span>
+            {courierProfile?.work_zone || 'Centro'}
           </div>
         </div>
-      </div>
+        <ThemeToggle compact />
+        <ModeSwitch compact />
+      </header>
 
-      <div className="sc" style={{ flex: 1, overflowY: 'auto', padding: '6px 20px 108px' }}>
-        <div style={{ borderRadius: 28, padding: 20, background: 'linear-gradient(145deg,#1B355C 0%,#0C1A31 64%)', color: '#fff', boxShadow: '0 18px 44px rgba(12,26,49,.28)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -44, top: -54, width: 190, height: 190, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,130,32,.36),rgba(245,130,32,0) 70%)' }} />
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.09em', color: 'rgba(255,255,255,.5)' }}>GANADO HOY</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, height: 26, padding: '0 11px', borderRadius: 999, background: 'rgba(255,255,255,.1)', fontSize: 10.5, fontWeight: 800, letterSpacing: '.04em', color: '#9FD98A' }}>
-              <Icon name="two_wheeler" size={14} />
-              {(courierProfile?.total_deliveries || 0)} entregas
-            </span>
+      <div className="dx-page sc">
+        <HeroCard glow={isOnline ? 'green' : 'orange'}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Ganado hoy</Overline>
+            <Chip icon="two_wheeler" bg="rgba(255,255,255,.12)" color="#A9D98F">
+              {courierProfile?.total_deliveries || 0} entregas
+            </Chip>
           </div>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 7 }}>
-            <span className="dsp" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.03em' }}>{money(todayEarnings)}</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6 }}>
+            <span className="dsp" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.035em' }}>{money(earnings)}</span>
+            {deliveredToday.length > 0 && <span style={{ fontSize: 12.5, fontWeight: 800, color: '#A9D98F' }}>{deliveredToday.length} hoy</span>}
           </div>
 
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.1)' }}>
-            <span style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', background: isOnline ? 'rgba(87,166,57,.22)' : 'rgba(255,255,255,.1)' }}>
-              <Icon name={isOnline ? 'bolt' : 'bedtime'} size={19} fill color={isOnline ? '#8FD46E' : 'rgba(255,255,255,.6)'} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.13)' }}>
+            <span style={{ width: 36, height: 36, borderRadius: 'var(--sh-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', background: isOnline ? 'rgba(123,198,83,.22)' : 'rgba(255,255,255,.1)' }}>
+              <Icon name={isOnline ? 'bolt' : 'bedtime'} size={19} fill color={isOnline ? '#A9D98F' : 'rgba(255,255,255,.6)'} />
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14.5, fontWeight: 800 }}>{isOnline ? 'Estás en línea' : 'Estás desconectado'}</span>
-              <span style={{ display: 'block', fontSize: 11.5, color: 'rgba(255,255,255,.5)', marginTop: 1 }}>
-                {isOnline ? `Recibiendo pedidos en zona ${courierProfile?.work_zone || 'Centro'}` : 'Conéctate para recibir pedidos'}
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{isOnline ? 'Estás en línea' : 'Estás desconectado'}</span>
+              <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>
+                {isOnline ? `Recibiendo pedidos en ${courierProfile?.work_zone || 'Centro'}` : 'Actívate para recibir pedidos'}
               </span>
             </span>
-            <button
-              onClick={handleToggle}
-              disabled={toggling}
-              style={{ width: 54, height: 31, borderRadius: 99, padding: 3, display: 'flex', flex: 'none', background: isOnline ? 'var(--green)' : 'rgba(255,255,255,.22)' }}
-            >
-              <span style={{ width: 25, height: 25, borderRadius: '50%', background: '#fff', transition: 'transform .22s cubic-bezier(.32,.72,0,1)', transform: isOnline ? 'translateX(23px)' : 'translateX(0)' }} />
-            </button>
+            <Switch checked={isOnline} onChange={toggle} disabled={toggling} />
           </div>
-        </div>
+        </HeroCard>
 
-        {isOnline && nearby.map((req) => (
-          <div key={req.id} style={{ marginTop: 14, background: 'var(--surface)', border: '1.5px solid var(--primary)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 12px 34px rgba(245,130,32,.16)', animation: 'pop .22s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', background: 'linear-gradient(90deg,#FDF1E6,#FFF9F4)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 800, color: 'var(--primary)', letterSpacing: '.04em' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', animation: 'glow 1s infinite' }} />
-                NUEVO PEDIDO
-              </span>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted)' }}>{serviceLabel(req.service_type)}</span>
+        {/* Activar notificaciones */}
+        {perm !== 'granted' && perm !== 'unsupported' && (
+          <Card tone="low" style={{ marginTop: 12, padding: 13, display: 'flex', alignItems: 'center', gap: 11 }}>
+            <span style={{ width: 38, height: 38, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+              <Icon name="notifications_active" size={19} fill color="var(--on-tertiary-container)" />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>Activa las alertas</span>
+              <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>Te avisamos apenas entre un pedido</span>
+            </span>
+            <Button style={{ height: 38, fontSize: 12.5, padding: '0 14px' }} onClick={async () => setPerm(await requestNotificationPermission())}>
+              Activar
+            </Button>
+          </Card>
+        )}
+
+        {/* Pedido activo con seguimiento en vivo */}
+        {current && (
+          <Card elevation={3} style={{ marginTop: 12, padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '13px 15px', background: 'var(--secondary-container)', display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--secondary)', animation: 'dxGlow 1.2s infinite' }} />
+              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.06em', color: 'var(--on-secondary-container)' }}>ENTREGA EN CURSO</span>
+              <span style={{ flex: 1 }} />
+              {current.turbo && <Chip icon="bolt" bg="var(--secondary)" color="#fff">TURBO</Chip>}
             </div>
-            <div style={{ padding: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
-                <span className="dsp" style={{ fontWeight: 800, fontSize: 30 }}>{money(req.price)}</span>
-                {Number(req.tip) > 0 && (
-                  <span style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 800 }}>+{money(req.tip)} propina</span>
-                )}
+
+            {current.pickup_point && current.dropoff_point && (
+              <MapView
+                height={190}
+                pickup={current.pickup_point}
+                dropoff={current.dropoff_point}
+                courier={courierProfile?.last_lat ? { lat: courierProfile.last_lat, lon: courierProfile.last_lon } : null}
+                route={route}
+                interactive={false}
+                style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--outline-variant)' }}
+              />
+            )}
+
+            <div style={{ padding: 15 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                <span style={{ width: 40, height: 40, borderRadius: 'var(--sh-sm)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                  <Icon name={SERVICE_ICON[current.service_type]} size={20} color="var(--on-primary-container)" />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>{serviceLabel(current.service_type)}</span>
+                  <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {current.status === 'assigned' ? current.pickup_address : current.dropoff_address}
+                  </span>
+                </span>
+                <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>{money(current.price)}</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', marginTop: 16 }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 3 }}>
-                    <span style={{ width: 11, height: 11, borderRadius: '50%', background: 'var(--text)' }} />
-                    <span style={{ width: 2, height: 34, background: 'var(--border)' }} />
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, paddingBottom: 14 }}>
-                    <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', letterSpacing: '.05em' }}>RECOGER EN</span>
-                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, marginTop: 2 }}>{req.pickup_address}</span>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <span style={{ width: 11, height: 11, borderRadius: '50%', background: 'var(--primary)', flex: 'none', marginTop: 3 }} />
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', letterSpacing: '.05em' }}>ENTREGAR EN</span>
-                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700, marginTop: 2 }}>{req.dropoff_address}</span>
-                    {req.contact_name && <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{req.contact_name} · {req.contact_phone}</span>}
-                  </span>
-                </div>
-              </div>
+              {current.contact_phone && (
+                <a
+                  href={`https://wa.me/57${String(current.contact_phone).replace(/\D/g, '').slice(-10)}`}
+                  target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 'var(--sh-sm)', background: 'var(--secondary-container)', color: 'var(--on-secondary-container)', fontSize: 12.5, fontWeight: 700 }}
+                >
+                  <Icon name="chat" size={17} fill /> Escribir a {current.contact_name || 'cliente'}
+                </a>
+              )}
 
-              <button
-                onClick={() => handleAccept(req.id)}
-                style={{ width: '100%', height: 52, borderRadius: 16, background: 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 15.5, marginTop: 18, boxShadow: '0 10px 24px rgba(245,130,32,.32)' }}
-              >
-                Aceptar pedido
-              </button>
+              <Button full icon="navigation" color="var(--secondary)" onClick={() => advance(current)} style={{ marginTop: 12 }}>
+                {NEXT_LABEL[current.status]}
+              </Button>
             </div>
-          </div>
-        ))}
+          </Card>
+        )}
 
-        {isOnline && !loadingList && nearby.length === 0 && (
-          <div style={{ marginTop: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '30px 20px', textAlign: 'center', boxShadow: 'var(--shadowSm)' }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', border: '3px solid var(--surface2)', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-            <div className="dsp" style={{ fontWeight: 700, fontSize: 17, marginTop: 16 }}>Buscando pedidos cerca</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5, marginTop: 5 }}>
+        {/* Simulador de pedidos (solo Demo) */}
+        {isDemo && isOnline && (
+          <Card tone="low" style={{ marginTop: 12, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 11 }}>
+              <Icon name="science" size={18} fill color="var(--tertiary)" />
+              <span style={{ fontSize: 12.5, fontWeight: 800 }}>Simulador de pedidos</span>
+            </div>
+            <div style={{ display: 'flex', gap: 9 }}>
+              <Button variant="outlined" icon="add_alert" onClick={() => simulate(false)} style={{ flex: 1, height: 44, fontSize: 12.5, padding: 0 }}>
+                Pedido normal
+              </Button>
+              <Button icon="bolt" color="var(--secondary)" onClick={() => simulate(true)} style={{ flex: 1, height: 44, fontSize: 12.5, padding: 0 }}>
+                Turbo
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {isOnline && !current && open.length === 0 && !loading && (
+          <Card style={{ marginTop: 12, padding: '28px 22px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}><Spinner /></div>
+            <div className="dsp" style={{ fontWeight: 700, fontSize: 16, marginTop: 14 }}>Buscando pedidos cerca</div>
+            <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', lineHeight: 1.5, marginTop: 4 }}>
               Estás en zona {courierProfile?.work_zone || 'Centro'}. Te avisamos apenas llegue uno.
             </div>
-          </div>
+          </Card>
         )}
 
         {!isOnline && (
-          <div style={{ marginTop: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: '30px 20px', textAlign: 'center', boxShadow: 'var(--shadowSm)' }}>
-            <span style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-              <Icon name="bedtime" size={26} color="var(--faint)" />
-            </span>
-            <div className="dsp" style={{ fontWeight: 700, fontSize: 17, marginTop: 16 }}>Estás desconectado</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5, marginTop: 5 }}>Conéctate para empezar a recibir pedidos.</div>
+          <div style={{ marginTop: 12 }}>
+            <EmptyState
+              icon="bedtime"
+              title="Estás desconectado"
+              body="Actívate para empezar a recibir mensajería, encomiendas y mandados."
+              action={<Button icon="bolt" color="var(--secondary)" onClick={toggle}>Conectarme</Button>}
+            />
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 11, marginTop: 16 }}>
-          {stats.map((s) => (
-            <div key={s.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 15, boxShadow: 'var(--shadowSm)' }}>
-              <Icon name={s.icon} size={20} fill color={s.color} />
-              <div className="dsp" style={{ fontWeight: 800, fontSize: 19, marginTop: 9 }}>{s.value}</div>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--muted)', marginTop: 3 }}>{s.label}</div>
-            </div>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 9, marginTop: 12 }}>
+          <StatTile icon="payments" tone="secondary" value={money(earnings)} label="Ganado hoy" />
+          <StatTile icon="task_alt" tone="primary" value={deliveredToday.length} label="Entregas hoy" />
+          <StatTile icon="star" tone="tertiary" value={Number(courierProfile?.rating || 5).toFixed(1)} label="Calificación" />
         </div>
       </div>
 
-      <BottomNav />
+      {offer && <IncomingOffer request={offer} onAccept={accept} onDismiss={() => setOffer(null)} />}
+
+      <BottomNav badges={{ '/entregas': active.length }} />
     </>
   );
 }
 
 export default function HomePage() {
-  return (
-    <RequireSession>
-      <HomeContent />
-    </RequireSession>
-  );
+  return <RequireSession><HomeContent /></RequireSession>;
 }

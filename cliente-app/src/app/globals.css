@@ -1,18 +1,4 @@
-/* Domix Cliente — mismos tokens que repartidor-app para mantener la marca. */
-.dx-app{
-  --bg:#f7f8fa; --sf:#ffffff; --sf2:#eef0f3; --bd:rgba(10,20,40,.10); --bd2:rgba(10,20,40,.06);
-  --tx:#0c1524; --mu:#6b7280; --inv:#0c1524; --invtx:#ffffff;
-  --navy:#10233f; --navyS:#e8ecf3;
-  --green:#1f9d55; --greenS:#e5f6ec;
-  --pink:#e31577; --pinkS:#fde7f0;
-  --amber:#c98a1e; --amberS:#faf0dd;
-  --red:#c8402f; --redS:#fbeceb;
-  -webkit-font-smoothing:antialiased;
-}
-.dx-app, .dx-app *{box-sizing:border-box; margin:0; padding:0;}
-.dx-app{width:100%; min-height:100dvh; font-family:Manrope,-apple-system,'Helvetica Neue',Helvetica,sans-serif; letter-spacing:-0.01em;}
-.dx-app button{font:inherit; color:inherit; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .2s ease, opacity .2s ease;}
-.dx-app button:active{transform:scale(.97); opacity:.92;}
-.dx-app input, .dx-app select, .dx-app textarea{font:inherit; color:inherit; background:none; border:0; outline:none;}
-html{height:100%;}
-body{margin:0; min-height:100dvh; background:#f7f8fa;}
+@import './theme.css';
+
+.dx-topbar{flex:none;display:flex;align-items:center;gap:12px;padding:14px 18px 10px}
+.dx-page{flex:1;overflow-y:auto;padding:2px 18px 96px}

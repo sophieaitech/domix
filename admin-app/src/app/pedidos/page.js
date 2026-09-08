@@ -1,0 +1,354 @@
+'use client';
+
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import TopBar from '../../components/TopBar';
+import MapView from '../../components/MapView';
+import { Icon, Card, Overline, Button, Chip, Field, Spinner, EmptyState } from '../../components/ui';
+import { useOps } from '../../context/OpsProvider';
+import { SERVICE_LABELS, SERVICE_ICON, STATUS_META, BOARD_COLUMNS, OPEN_STATUSES } from '../../lib/ops';
+import { money, quote, etaMinutes } from '../../lib/pricing';
+import { routeBetween } from '../../lib/geo';
+
+const NEXT = { requested: 'assigned', assigned: 'picked_up', picked_up: 'in_progress', in_progress: 'delivered' };
+const NEXT_LABEL = { assigned: 'Recogido', picked_up: 'En camino', in_progress: 'Entregado' };
+
+function minutesAgo(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+/* ---------- Ficha de pedido en el tablero ---------- */
+function OrderCard({ req, couriers, onAssign, onAdvance, onOpen }) {
+  const st = STATUS_META[req.status] || STATUS_META.requested;
+  const courier = couriers.find((c) => c.id === req.courier_id);
+  const late = req.status === 'requested' && (Date.now() - new Date(req.created_at).getTime()) > 8 * 60000;
+
+  return (
+    <Card
+      elevation={2}
+      style={{
+        padding: 14, marginBottom: 11, cursor: 'pointer',
+        borderLeft: `4px solid ${req.turbo ? 'var(--secondary)' : st.dot}`,
+        animation: 'dxUp .2s var(--ease-out)',
+      }}
+      onClick={() => onOpen(req)}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <span style={{ width: 34, height: 34, borderRadius: 'var(--sh-xs)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <Icon name={SERVICE_ICON[req.service_type]} size={18} color="var(--on-primary-container)" />
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>{SERVICE_LABELS[req.service_type]}</span>
+          <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 10.5, color: 'var(--on-surface-variant)' }}>#{req.tracking_code}</span>
+        </span>
+        {req.turbo && <Chip icon="bolt" bg="var(--secondary)" color="#fff">TURBO</Chip>}
+      </div>
+
+      <div style={{ marginTop: 11, fontSize: 12.5, fontWeight: 600 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', border: '2px solid var(--primary)', flex: 'none' }} />
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.pickup_address}</span>
+        </div>
+        <div style={{ width: 2, height: 10, background: 'var(--outline-variant)', marginLeft: 3 }} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flex: 'none' }} />
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.dropoff_address}</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--outline-variant)' }}>
+        <Icon name="schedule" size={14} color={late ? 'var(--tertiary)' : 'var(--on-surface-variant)'} />
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: late ? 'var(--tertiary)' : 'var(--on-surface-variant)' }}>{minutesAgo(req.created_at)}</span>
+        <span style={{ flex: 1 }} />
+        <span className="dsp" style={{ fontWeight: 800, fontSize: 16 }}>{money(req.price)}</span>
+      </div>
+
+      {req.status === 'requested' ? (
+        <select
+          onClick={(e) => e.stopPropagation()}
+          defaultValue=""
+          onChange={(e) => onAssign(req.id, e.target.value)}
+          style={{ width: '100%', height: 40, marginTop: 11, padding: '0 11px', borderRadius: 'var(--sh-xs)', background: 'var(--tertiary-container)', color: 'var(--on-tertiary-container)', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
+        >
+          <option value="">Asignar repartidor…</option>
+          {couriers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.first_name} {c.last_name}{c.status === 'online' ? ' · en línea' : c.status === 'busy' ? ' · ocupado' : ''}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 11 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+            <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--primary-container)', color: 'var(--on-primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 800, flex: 'none' }}>
+              {(courier?.first_name?.[0] || '?').toUpperCase()}
+            </span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {courier ? `${courier.first_name} ${courier.last_name || ''}`.trim() : 'Sin repartidor'}
+            </span>
+          </span>
+          {NEXT[req.status] && (
+            <Button
+              variant="outlined"
+              onClick={(e) => { e.stopPropagation(); onAdvance(req.id, NEXT[req.status]); }}
+              style={{ height: 34, fontSize: 11.5, padding: '0 11px' }}
+            >
+              {NEXT_LABEL[req.status]}
+            </Button>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/* ---------- Detalle lateral con mapa ---------- */
+function OrderDrawer({ req, couriers, onClose, onAdvance }) {
+  const [route, setRoute] = useState([]);
+  const pickup = req.pickup_point || (req.pickup_lat != null ? { lat: req.pickup_lat, lon: req.pickup_lon } : null);
+  const dropoff = req.dropoff_point || (req.dropoff_lat != null ? { lat: req.dropoff_lat, lon: req.dropoff_lon } : null);
+  const courier = couriers.find((c) => c.id === req.courier_id);
+
+  useEffect(() => {
+    let alive = true;
+    if (!pickup || !dropoff) return;
+    routeBetween(pickup, dropoff).then((r) => alive && setRoute(r.coords));
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [req.id]);
+
+  const st = STATUS_META[req.status] || STATUS_META.requested;
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--scrim)', display: 'flex', justifyContent: 'flex-end', animation: 'dxFadeIn .15s ease' }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="sc"
+        style={{ width: 'min(460px,100%)', height: '100%', overflowY: 'auto', background: 'var(--surface)', boxShadow: 'var(--elev-4)', animation: 'dxDrawer .24s var(--ease-out)' }}
+      >
+        <div style={{ padding: '20px 22px 16px', background: req.turbo ? 'linear-gradient(135deg,#2E7BC4,#1B4F8F)' : 'linear-gradient(135deg,#2A241E,#17140F)', color: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <Overline style={{ color: 'rgba(255,255,255,.6)' }}>{SERVICE_LABELS[req.service_type]}</Overline>
+              <div className="dsp" style={{ fontWeight: 800, fontSize: 26, marginTop: 5, letterSpacing: '.04em' }}>#{req.tracking_code}</div>
+            </div>
+            <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="close" size={20} color="#fff" />
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 14 }}>
+            <span className="dsp" style={{ fontWeight: 800, fontSize: 32 }}>{money(req.price)}</span>
+            {req.distance_km > 0 && <span style={{ fontSize: 12.5, fontWeight: 700, opacity: .8 }}>{Number(req.distance_km).toFixed(1)} km</span>}
+          </div>
+        </div>
+
+        <div style={{ padding: 20 }}>
+          {(pickup || dropoff) && (
+            <MapView
+              height={220}
+              pickup={pickup}
+              dropoff={dropoff}
+              courier={courier?.lat != null ? { lat: courier.lat, lon: courier.lon } : null}
+              route={route}
+            />
+          )}
+
+          <Card style={{ padding: 16, marginTop: 14 }}>
+            <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 11 }}>Cliente</Overline>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>{req.contact_name || 'Sin nombre'}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', marginTop: 2 }}>{req.contact_phone}</div>
+            {req.contact_phone && (
+              <a
+                href={`https://wa.me/57${String(req.contact_phone).replace(/\D/g, '').slice(-10)}`}
+                target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 'var(--sh-sm)', background: 'var(--secondary-container)', color: 'var(--on-secondary-container)', fontSize: 12.5, fontWeight: 700 }}
+              >
+                <Icon name="chat" size={17} fill /> Escribir por WhatsApp
+              </a>
+            )}
+          </Card>
+
+          <Card style={{ padding: 16, marginTop: 14 }}>
+            <Overline style={{ color: 'var(--on-surface-variant)', marginBottom: 11 }}>Recorrido</Overline>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
+                <span style={{ width: 11, height: 11, borderRadius: '50%', border: '3px solid var(--primary)' }} />
+                <span style={{ width: 2, flex: 1, minHeight: 22, background: 'var(--outline-variant)' }} />
+              </span>
+              <span style={{ flex: 1, paddingBottom: 14 }}>
+                <Overline style={{ fontSize: 9.5, color: 'var(--on-surface-variant)' }}>Recoger en</Overline>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{req.pickup_address}</span>
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ width: 11, height: 11, borderRadius: '50%', background: 'var(--primary)', flex: 'none', marginTop: 4 }} />
+              <span style={{ flex: 1 }}>
+                <Overline style={{ fontSize: 9.5, color: 'var(--on-surface-variant)' }}>Entregar en</Overline>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{req.dropoff_address}</span>
+              </span>
+            </div>
+          </Card>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16 }}>
+            <Chip bg={st.bg} color={st.fg}>{st.label}</Chip>
+            <span style={{ flex: 1 }} />
+            {NEXT[req.status] && req.status !== 'requested' && (
+              <Button icon="arrow_forward" onClick={() => { onAdvance(req.id, NEXT[req.status]); onClose(); }}>
+                {NEXT_LABEL[req.status]}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Alta manual de pedido (llamada / WhatsApp) ---------- */
+function NuevoPedido({ onClose, onCreate, rules }) {
+  const [form, setForm] = useState({ service_type: 'mensajeria', contact_name: '', contact_phone: '', pickup_address: '', dropoff_address: '', distance_km: 3, turbo: false });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const q = quote({ distanceKm: Number(form.distance_km) || 0, serviceType: form.service_type, turbo: form.turbo, rules });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    const { error } = await onCreate({
+      ...form,
+      distance_km: Number(form.distance_km) || null,
+      eta_minutes: etaMinutes(Number(form.distance_km) || 0, form.turbo),
+      price: q.total,
+      price_breakdown: q.breakdown,
+    });
+    setBusy(false);
+    if (error) return setError(error.message);
+    onClose();
+  };
+
+  return (
+    <Card elevation={3} style={{ padding: 20, marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>Nuevo pedido</span>
+        <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="close" size={19} />
+        </button>
+      </div>
+
+      <form onSubmit={submit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(215px,1fr))', gap: 14 }}>
+        <label>
+          <span style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: 'var(--on-surface-variant)', marginBottom: 6 }}>Servicio</span>
+          <select value={form.service_type} onChange={set('service_type')} style={{ width: '100%', height: 52, padding: '0 14px', borderRadius: 'var(--sh-sm)', background: 'var(--surface-lowest)', border: '1px solid var(--outline-variant)', fontSize: 14.5, fontWeight: 600 }}>
+            {Object.entries(SERVICE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </label>
+        <Field required label="Cliente" icon="person" placeholder="Nombre de quien pide" value={form.contact_name} onChange={set('contact_name')} />
+        <Field required label="Celular" icon="call" type="tel" placeholder="315 792 4906" value={form.contact_phone} onChange={set('contact_phone')} />
+        <Field required label="Recoger en" icon="trip_origin" placeholder="Dirección de origen" value={form.pickup_address} onChange={set('pickup_address')} />
+        <Field required label="Entregar en" icon="location_on" placeholder="Dirección de destino" value={form.dropoff_address} onChange={set('dropoff_address')} />
+        <Field required label="Distancia (km)" icon="straighten" type="number" placeholder="3" value={form.distance_km} onChange={set('distance_km')} />
+
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: 14, borderRadius: 'var(--sh-md)', background: 'var(--surface-container)' }}>
+          <button type="button" onClick={() => setForm((f) => ({ ...f, turbo: !f.turbo }))} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 800, color: form.turbo ? 'var(--tertiary)' : 'var(--on-surface-variant)' }}>
+            <Icon name={form.turbo ? 'check_box' : 'check_box_outline_blank'} size={20} fill={form.turbo} />
+            <Icon name="bolt" size={17} fill /> Domix Turbo
+          </button>
+          <span style={{ flex: 1 }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--on-surface-variant)' }}>Tarifa calculada</span>
+          <span className="dsp" style={{ fontWeight: 800, fontSize: 24 }}>{money(q.total)}</span>
+        </div>
+
+        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {error && <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--error)' }}>{error}</span>}
+          <span style={{ flex: 1 }} />
+          <Button variant="outlined" type="button" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" icon="check" disabled={busy}>{busy ? 'Creando…' : 'Crear pedido'}</Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+function PedidosContent() {
+  const params = useSearchParams();
+  const { requests, couriers, loading, assign, advance, createRequest, effectiveRules } = useOps();
+  const [nuevo, setNuevo] = useState(params.get('nuevo') === '1');
+  const [detail, setDetail] = useState(null);
+  const [query, setQuery] = useState('');
+
+  const q = query.toLowerCase();
+  const visibles = requests.filter((r) =>
+    !q || [r.contact_name, r.contact_phone, r.pickup_address, r.dropoff_address, r.tracking_code].some((v) => v?.toLowerCase().includes(q))
+  );
+  const entregadosHoy = visibles.filter((r) => r.status === 'delivered' && r.delivered_at && new Date(r.delivered_at).toDateString() === new Date().toDateString());
+
+  return (
+    <>
+      <TopBar
+        title="Pedidos en vivo"
+        subtitle="El tablero se actualiza solo a medida que entran y avanzan los servicios"
+        actions={<Button icon="add" onClick={() => setNuevo(true)} style={{ height: 44 }}>Nuevo pedido</Button>}
+      />
+
+      {nuevo && <NuevoPedido rules={effectiveRules} onClose={() => setNuevo(false)} onCreate={createRequest} />}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 9, height: 42, padding: '0 15px', borderRadius: 'var(--sh-full)', background: 'var(--surface-container)', minWidth: 280 }}>
+          <Icon name="search" size={19} color="var(--on-surface-variant)" />
+          <input placeholder="Cliente, dirección o código" value={query} onChange={(e) => setQuery(e.target.value)} style={{ flex: 1, fontSize: 13.5, fontWeight: 600 }} />
+        </span>
+        <span style={{ flex: 1 }} />
+        <Chip icon="task_alt" bg="var(--secondary-container)" color="var(--on-secondary-container)" style={{ height: 34, fontSize: 12.5 }}>
+          {entregadosHoy.length} entregados hoy
+        </Chip>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 70 }}><Spinner /></div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(255px,1fr))', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+          {BOARD_COLUMNS.map((col) => {
+            const items = visibles.filter((r) => r.status === col.id);
+            return (
+              <div key={col.id} style={{ minWidth: 255 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 14px', borderRadius: 'var(--sh-md)', background: 'var(--surface-container)', marginBottom: 12 }}>
+                  <Icon name={col.icon} size={18} color="var(--on-surface-variant)" />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 800 }}>{col.label}</span>
+                  <span style={{ minWidth: 24, height: 24, padding: '0 7px', borderRadius: 999, background: items.length ? 'var(--primary)' : 'var(--outline-variant)', color: items.length ? '#fff' : 'var(--on-surface-variant)', fontSize: 11.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {items.length}
+                  </span>
+                </div>
+
+                {items.length === 0 && (
+                  <div style={{ padding: '26px 14px', textAlign: 'center', borderRadius: 'var(--sh-md)', border: '1px dashed var(--outline-variant)', fontSize: 12, color: 'var(--on-surface-variant)' }}>
+                    Sin pedidos aquí
+                  </div>
+                )}
+
+                {items.map((r) => (
+                  <OrderCard key={r.id} req={r} couriers={couriers} onAssign={assign} onAdvance={advance} onOpen={setDetail} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && visibles.length === 0 && (
+        <div style={{ marginTop: 18 }}>
+          <EmptyState icon="receipt_long" title="Sin pedidos" body="Cuando un cliente pida por la app o cargues uno desde WhatsApp, aparecerá aquí al instante." />
+        </div>
+      )}
+
+      {detail && <OrderDrawer req={detail} couriers={couriers} onClose={() => setDetail(null)} onAdvance={advance} />}
+    </>
+  );
+}
+
+export default function PedidosPage() {
+  return <Suspense fallback={<Spinner />}><PedidosContent /></Suspense>;
+}

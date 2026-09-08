@@ -8,16 +8,22 @@ const SERVICE_LABELS = {
   autorizacion_medica: 'Autorización médica',
 };
 
+export const SERVICE_ICON = {
+  mensajeria: 'mail',
+  encomienda: 'inventory_2',
+  domicilio: 'moped',
+  mandado: 'shopping_bag',
+  autorizacion_medica: 'medical_information',
+};
+
 export function serviceLabel(type) {
   return SERVICE_LABELS[type] || type;
 }
 
-export async function fetchNearbyRequests({ lat, lon, radiusMeters = 5000 }) {
+export async function fetchNearbyRequests({ lat, lon, radiusMeters = 5000 } = {}) {
   if (lat != null && lon != null) {
     const { data, error } = await supabase.rpc('nearby_requests_for_courier', {
-      courier_lat: lat,
-      courier_lon: lon,
-      radius_meters: radiusMeters,
+      courier_lat: lat, courier_lon: lon, radius_meters: radiusMeters,
     });
     if (!error) return data || [];
   }
@@ -41,41 +47,39 @@ export async function fetchCourierDeliveries(courierId) {
 }
 
 export async function acceptRequest(requestId, courierId) {
-  const { data, error } = await supabase
+  return supabase
     .from('service_requests')
     .update({ courier_id: courierId, status: 'assigned', assigned_at: new Date().toISOString() })
     .eq('id', requestId)
     .eq('status', 'requested')
     .select()
     .maybeSingle();
-  return { data, error };
 }
 
 export async function updateRequestStatus(requestId, status) {
-  const timestamps = {
+  const stamps = {
     picked_up: { picked_up_at: new Date().toISOString() },
     delivered: { delivered_at: new Date().toISOString() },
   };
-  const { data, error } = await supabase
+  return supabase
     .from('service_requests')
-    .update({ status, ...(timestamps[status] || {}) })
+    .update({ status, ...(stamps[status] || {}) })
     .eq('id', requestId)
     .select()
     .maybeSingle();
-  return { data, error };
 }
 
 export async function fetchTodayEarnings(courierId) {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
   const { data, error } = await supabase
     .from('service_requests')
-    .select('price, tip, delivered_at')
+    .select('price, tip')
     .eq('courier_id', courierId)
     .eq('status', 'delivered')
-    .gte('delivered_at', startOfDay.toISOString());
+    .gte('delivered_at', start.toISOString());
   if (error) throw error;
-  return (data || []).reduce((sum, r) => sum + Number(r.price || 0) + Number(r.tip || 0), 0);
+  return (data || []).reduce((s, r) => s + Number(r.price || 0) + Number(r.tip || 0), 0);
 }
 
 export async function fetchWeekEarnings(courierId) {

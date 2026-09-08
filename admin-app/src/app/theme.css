@@ -1,0 +1,215 @@
+/* ============================================================
+   Domix — Sistema de diseño
+   Base cálida y sobria (la misma familia de neutros de Turafood),
+   con la identidad Domix: verde de marca para la acción y azul
+   marino para lo prioritario. Sin naranjas fuertes.
+   ============================================================ */
+
+:root{
+  /* --- Identidad de marca (del logo Domix) --- */
+  --dx-green:#43922B;   --dx-green-dark:#35761F;  --dx-green-soft:#E8F1E2;
+  --dx-navy:#1B4F8F;    --dx-navy-dark:#123B6B;   --dx-navy-soft:#E5EBF3;
+  --dx-ink:#17140F;     --dx-ink-2:#241F1A;       --dx-ink-3:#12100D;
+
+  /* --- Roles de color --- */
+  --primary:#43922B;              --on-primary:#FFFFFF;
+  --primary-container:#E8F1E2;    --on-primary-container:#204A11;
+  --secondary:#1B4F8F;            --on-secondary:#FFFFFF;
+  --secondary-container:#E5EBF3;  --on-secondary-container:#123B6B;
+  --tertiary:#B8801C;             --on-tertiary:#FFFFFF;
+  --tertiary-container:#FAF0DD;   --on-tertiary-container:#6E4B07;
+  --error:#C8402F;                --on-error:#FFFFFF;
+  --error-container:#FBECEB;      --on-error-container:#6B1F16;
+
+  /* Superficies cálidas */
+  --surface:#F6F5F2;
+  --surface-lowest:#FFFFFF;
+  --surface-low:#FAF9F7;
+  --surface-container:#F0EEE9;
+  --surface-high:#EAE7E1;
+  --surface-highest:#E4E1DA;
+  --surface-dim:#E7E5E1;
+  --on-surface:#17140F;
+  --on-surface-variant:#8C857B;
+  --outline:#B6AFA4;
+  --outline-variant:rgba(20,16,10,.12);
+  --scrim:rgba(20,16,10,.36);
+
+  /* Superficie oscura (hero, sidebar, cabeceras) */
+  --inverse-surface:#17140F;
+  --on-inverse-surface:#F6F5F2;
+
+  /* --- Escala de forma --- */
+  --sh-xs:8px; --sh-sm:12px; --sh-md:16px; --sh-lg:20px; --sh-xl:28px; --sh-full:999px;
+
+  /* --- Elevación, teñida al neutro cálido --- */
+  --elev-1:0 1px 2px rgba(20,16,10,.07), 0 1px 3px rgba(20,16,10,.05);
+  --elev-2:0 2px 5px rgba(20,16,10,.07), 0 3px 10px rgba(20,16,10,.06);
+  --elev-3:0 4px 12px rgba(20,16,10,.09), 0 8px 26px rgba(20,16,10,.07);
+  --elev-4:0 10px 22px rgba(20,16,10,.12), 0 18px 48px rgba(20,16,10,.10);
+
+  /* --- Movimiento --- */
+  --ease:cubic-bezier(.2,0,0,1);
+  --ease-out:cubic-bezier(.05,.7,.1,1);
+}
+
+/* ============================================================
+   Tema oscuro — mismos roles, en neutros cálidos oscuros.
+   data-theme="dark" fuerza oscuro; "auto" sigue al sistema.
+   ============================================================ */
+:root[data-theme="dark"]{
+  --primary:#8CCB6E;              --on-primary:#16330A;
+  --primary-container:#2C6318;    --on-primary-container:#D9EFCC;
+  --secondary:#9FC2ED;            --on-secondary:#0F2E52;
+  --secondary-container:#1B4F8F;  --on-secondary-container:#DCE8F7;
+  --tertiary:#E8BC6A;             --on-tertiary:#3E2A00;
+  --tertiary-container:#7A5608;   --on-tertiary-container:#FBEBCB;
+  --error:#F0705E;                --on-error:#4E140C;
+  --error-container:#8C2B1E;      --on-error-container:#FBDCD8;
+
+  --surface:#14120F;
+  --surface-lowest:#0E0C0A;
+  --surface-low:#191612;
+  --surface-container:#1F1B17;
+  --surface-high:#28231E;
+  --surface-highest:#332D26;
+  --surface-dim:#0A0908;
+  --on-surface:#EDE9E3;
+  --on-surface-variant:#A9A198;
+  --outline:#7D766D;
+  --outline-variant:rgba(246,245,242,.14);
+  --scrim:rgba(0,0,0,.62);
+
+  --inverse-surface:#F6F5F2;
+  --on-inverse-surface:#17140F;
+
+  --elev-1:0 1px 2px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.35);
+  --elev-2:0 2px 5px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.38);
+  --elev-3:0 6px 14px rgba(0,0,0,.55), 0 10px 28px rgba(0,0,0,.42);
+  --elev-4:0 10px 22px rgba(0,0,0,.6), 0 20px 46px rgba(0,0,0,.5);
+}
+
+@media (prefers-color-scheme:dark){
+  :root[data-theme="auto"]{
+    --primary:#8CCB6E;              --on-primary:#16330A;
+    --primary-container:#2C6318;    --on-primary-container:#D9EFCC;
+    --secondary:#9FC2ED;            --on-secondary:#0F2E52;
+    --secondary-container:#1B4F8F;  --on-secondary-container:#DCE8F7;
+    --tertiary:#E8BC6A;             --on-tertiary:#3E2A00;
+    --tertiary-container:#7A5608;   --on-tertiary-container:#FBEBCB;
+    --error:#F0705E;                --on-error:#4E140C;
+    --error-container:#8C2B1E;      --on-error-container:#FBDCD8;
+    --surface:#14120F; --surface-lowest:#0E0C0A; --surface-low:#191612;
+    --surface-container:#1F1B17; --surface-high:#28231E; --surface-highest:#332D26; --surface-dim:#0A0908;
+    --on-surface:#EDE9E3; --on-surface-variant:#A9A198;
+    --outline:#7D766D; --outline-variant:rgba(246,245,242,.14); --scrim:rgba(0,0,0,.62);
+    --inverse-surface:#F6F5F2; --on-inverse-surface:#17140F;
+    --elev-1:0 1px 2px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.35);
+    --elev-2:0 2px 5px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.38);
+    --elev-3:0 6px 14px rgba(0,0,0,.55), 0 10px 28px rgba(0,0,0,.42);
+    --elev-4:0 10px 22px rgba(0,0,0,.6), 0 20px 46px rgba(0,0,0,.5);
+  }
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .dx-shell{background:var(--surface)}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  color:var(--on-surface);
+  background:var(--surface-dim);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Tipografía de display: cifras y titulares */
+.dsp{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em}
+
+/* Iconos Material Symbols */
+.mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;
+    letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;
+    word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';
+    -webkit-font-smoothing:antialiased;flex:none}
+.mi-fill{font-variation-settings:'FILL' 1}
+
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;
+       position:relative;overflow:hidden;transition:box-shadow .2s var(--ease),background .2s var(--ease),transform .12s var(--ease)}
+button::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s var(--ease);pointer-events:none}
+button:hover::after{opacity:.07}
+button:active::after{opacity:.11}
+button:active{transform:scale(.985)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+
+input,textarea,select{font-family:inherit;color:inherit;background:none;border:0;outline:none}
+input::placeholder,textarea::placeholder{color:var(--on-surface-variant);opacity:.75}
+a{color:var(--primary);text-decoration:none}
+
+::-webkit-scrollbar{width:0;height:0}
+.sc{scrollbar-width:none;-ms-overflow-style:none;overflow-y:auto}
+.hs{scrollbar-width:none;-ms-overflow-style:none;overflow-x:auto;overflow-y:hidden}
+
+@keyframes dxUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes dxPop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+@keyframes dxSpin{to{transform:rotate(360deg)}}
+@keyframes dxGlow{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes dxPulse{0%,100%{box-shadow:0 0 0 0 rgba(67,146,43,.38)}50%{box-shadow:0 0 0 12px rgba(67,146,43,0)}}
+@keyframes dxSheen{0%{background-position:-280px 0}100%{background-position:280px 0}}
+@keyframes dxFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes dxSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes dxDrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes dxDrawer{from{transform:translateX(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+
+/* ============================================================
+   Marco iPhone 17 Pro Max (440×956), escalado para caber en la
+   ventana. En celular real desaparece y va a pantalla completa.
+   ============================================================ */
+.dx-shell{position:relative;width:100%;min-height:100dvh;background:var(--surface);
+          display:flex;flex-direction:column;overflow:hidden}
+
+.dx-device{
+  position:relative;flex:none;overflow:hidden;background:var(--surface);
+  border-radius:58px;
+  box-shadow:
+    0 0 0 12px #1B1A18,
+    0 0 0 13.5px #6A645B,
+    0 0 0 15px #131211,
+    0 46px 100px rgba(20,16,10,.4);
+}
+.dx-device .dx-shell{height:100%;min-height:0}
+
+.dx-island{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:126px;height:36px;border-radius:99px;background:#050506;z-index:900;
+  display:flex;align-items:center;justify-content:flex-end;padding-right:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+.dx-island::after{
+  content:'';width:9px;height:9px;border-radius:50%;background:#16161A;
+  box-shadow:inset 0 0 0 1.5px #0E0E11, inset 0 0 3px rgba(60,90,160,.55);
+}
+.dx-status{
+  position:absolute;top:0;left:0;right:0;height:58px;z-index:850;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 34px 8px;pointer-events:none;
+  /* La mezcla por diferencia mantiene la hora legible sobre cualquier fondo. */
+  color:#fff;mix-blend-mode:difference;
+}
+.dx-screen{position:absolute;inset:0;padding-top:58px;padding-bottom:8px;display:flex;flex-direction:column;overflow:hidden}
+.dx-screen > *{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.dx-homebar{
+  position:absolute;left:50%;bottom:9px;transform:translateX(-50%);
+  width:144px;height:5px;border-radius:99px;background:rgba(20,16,10,.4);z-index:900;pointer-events:none;
+}
+
+@media (min-width:640px){
+  body{display:flex;align-items:flex-start;justify-content:center;
+       background:radial-gradient(120% 90% at 50% 0%,#F2F0EC,#DCD9D3)}
+  :root[data-theme="dark"] body{background:radial-gradient(120% 90% at 50% 0%,#1C1915,#080706)}
+}
+@media (max-width:639px){
+  .dx-shell--bare{height:100dvh}
+}
