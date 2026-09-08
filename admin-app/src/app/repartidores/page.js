@@ -81,6 +81,8 @@ export default function RepartidoresPage() {
         actions={<Button icon="person_add" onClick={() => setNuevo(true)} style={{ height: 44 }}>Registrar repartidor</Button>}
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       {nuevo && (
         <NuevoRepartidor
           branches={branches} isDemo={isDemo} setCouriers={setCouriers}
@@ -149,6 +151,7 @@ export default function RepartidoresPage() {
             </Card>
           );
         })}
+      </div>
       </div>
     </>
   );

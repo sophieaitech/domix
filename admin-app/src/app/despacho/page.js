@@ -64,6 +64,8 @@ export default function DespachoPage() {
         actions={<Button icon={saved ? 'check' : 'save'} color={saved ? 'var(--secondary)' : undefined} onClick={guardar} style={{ height: 44 }}>{saved ? 'Guardado' : 'Guardar reglas'}</Button>}
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       <HeroCard glow="orange" style={{ padding: 22, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ width: 46, height: 46, borderRadius: 'var(--sh-sm)', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -243,6 +245,7 @@ export default function DespachoPage() {
             </div>
           </div>
         </Card>
+      </div>
       </div>
     </>
   );

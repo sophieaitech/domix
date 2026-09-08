@@ -34,6 +34,8 @@ export default function MapaPage() {
         subtitle="Dónde está cada repartidor y qué está entregando, en tiempo real"
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 16, alignItems: 'start' }}>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <MapView
@@ -116,6 +118,7 @@ export default function MapaPage() {
             );
           })}
         </div>
+      </div>
       </div>
     </>
   );

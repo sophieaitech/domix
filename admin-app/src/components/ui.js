@@ -1,116 +1,191 @@
 'use client';
 
-/* Kit de UI Material 3 con la identidad Domix. Compartido por las pantallas. */
+/* Kit de UI del panel, con el lenguaje del admin de Turapp:
+   tarjetas blancas de borde fino, cifras en mono, acentos Domix. */
 
 export function Icon({ name, size = 20, fill = false, color, style }) {
   return <span className={`mi${fill ? ' mi-fill' : ''}`} style={{ fontSize: size, color, ...style }}>{name}</span>;
 }
 
-export function Card({ children, style, tone = 'lowest', elevation = 1, ...rest }) {
-  const bg = { lowest: 'var(--surface-lowest)', low: 'var(--surface-low)', container: 'var(--surface-container)' }[tone];
+export function Card({ children, style, padding = 18, elevation, ...rest }) {
+  // elevation viene de la versión anterior del kit; aquí la elevación
+  // la da el borde fino, así que se ignora a propósito.
   return (
-    <div
-      style={{
-        background: bg, borderRadius: 'var(--sh-lg)', border: '1px solid var(--outline-variant)',
-        boxShadow: `var(--elev-${elevation})`, ...style,
-      }}
-      {...rest}
-    >
-      {children}
+    <div className="dx-card" style={{ padding, ...style }} {...rest}>{children}</div>
+  );
+}
+
+export function CardTitle({ children, sub, right }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: sub ? 16 : 16 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ font: '800 15px Manrope,sans-serif', letterSpacing: '-.025em' }}>{children}</div>
+        {sub && <div style={{ font: '500 11.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 3 }}>{sub}</div>}
+      </div>
+      {right}
     </div>
   );
 }
 
-/* Tarjeta hero en azul de marca, con halo de color (naranja o verde). */
-export function HeroCard({ children, glow = 'green', style }) {
-  const glowColor = glow === 'navy' ? 'rgba(46,123,196,.26)' : 'rgba(78,163,60,.24)';
+/* Tarjeta de indicador: etiqueta, icono tonal, cifra en mono y delta. */
+export function Kpi({ label, value, icon, tone = 'green', delta, deltaTone, hint }) {
+  const tones = {
+    green: ['var(--greenS)', 'var(--green)'],
+    navy: ['var(--navyS)', 'var(--navy)'],
+    amber: ['var(--amberS)', 'var(--amber)'],
+    red: ['var(--redS)', 'var(--red)'],
+    purple: ['var(--purpleS)', 'var(--purple)'],
+  };
+  const [bg, fg] = tones[tone] || tones.green;
   return (
-    <div
-      style={{
-        position: 'relative', overflow: 'hidden', borderRadius: 'var(--sh-xl)', padding: 20,
-        background: 'linear-gradient(150deg,#2A241E 0%,#17140F 58%,#12100D 100%)',
-        color: '#F6F5F2', boxShadow: 'var(--elev-4)', ...style,
-      }}
-    >
-      <div style={{ position: 'absolute', right: -50, top: -66, width: 208, height: 208, borderRadius: '50%', background: `radial-gradient(circle,${glowColor},transparent 70%)` }} />
-      <div style={{ position: 'absolute', left: -60, bottom: -80, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle,rgba(46,123,196,.14),transparent 70%)' }} />
-      <div style={{ position: 'relative' }}>{children}</div>
+    <div className="dx-card" style={{ padding: '16px 17px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+        <div style={{ font: '600 11px Manrope,sans-serif', color: 'var(--mu)', letterSpacing: '.04em' }}>{label}</div>
+        <div style={{ width: 26, height: 26, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <Icon name={icon} size={15} fill color={fg} />
+        </div>
+      </div>
+      <div className="num" style={{ font: "800 25px/1 'IBM Plex Mono',monospace", marginBottom: 8 }}>{value}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        {delta && <div style={{ font: '700 11px Manrope,sans-serif', color: deltaTone || 'var(--green)' }}>{delta}</div>}
+        {hint && <div style={{ font: '500 11px Manrope,sans-serif', color: 'var(--mu)' }}>{hint}</div>}
+      </div>
     </div>
   );
 }
 
-export function Overline({ children, style }) {
-  return <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', ...style }}>{children}</div>;
-}
+const VARIANT_ALIAS = { filled: 'solid', outlined: 'outline', tonal: 'soft', text: 'ghost' };
 
-/* Botón MD3: filled | tonal | outlined | text */
-export function Button({ children, variant = 'filled', icon, full, color, style, ...rest }) {
+export function Button({ children, variant = 'solid', icon, full, color, style, ...rest }) {
+  variant = VARIANT_ALIAS[variant] || variant;
   const base = {
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    height: 50, padding: '0 22px', borderRadius: 'var(--sh-full)',
-    fontSize: 14.5, fontWeight: 700, width: full ? '100%' : undefined,
+    height: 40, padding: '0 16px', borderRadius: 11, font: '700 13px Manrope,sans-serif', whiteSpace: 'nowrap',
   };
   const variants = {
-    filled: { background: color || 'var(--primary)', color: 'var(--on-primary)', boxShadow: 'var(--elev-1)' },
-    tonal: { background: 'var(--primary-container)', color: 'var(--on-primary-container)' },
-    outlined: { background: 'transparent', color: color || 'var(--primary)', border: '1px solid var(--outline)' },
-    text: { background: 'transparent', color: color || 'var(--primary)', padding: '0 12px' },
+    solid: { background: 'var(--inv)', color: 'var(--invtx)' },
+    green: { background: 'var(--green)', color: '#fff' },
+    soft: { background: 'var(--sf)', color: 'var(--tx)' },
+    outline: { background: 'transparent', color: 'var(--tx)', border: '1px solid var(--bd)' },
+    ghost: { background: 'transparent', color: 'var(--mu)' },
   };
+  const override = color
+    ? (variant === 'outline' || variant === 'ghost' ? { color } : { background: color, color: '#fff' })
+    : null;
   return (
-    <button style={{ ...base, ...variants[variant], ...style }} {...rest}>
-      {icon && <Icon name={icon} size={19} fill />}
+    <button style={{ ...base, ...(variants[variant] || variants.solid), ...(full ? { width: '100%' } : null), ...override, ...style }} {...rest}>
+      {icon && <Icon name={icon} size={17} fill />}
       {children}
     </button>
   );
 }
 
-/* Chip de estado / asistente */
-export function Chip({ children, icon, bg = 'var(--surface-container)', color = 'var(--on-surface-variant)', style }) {
+export function Pill({ children, icon, tone = 'default', bg, color, style }) {
+  const tones = {
+    default: { background: 'var(--sf)', color: 'var(--mu)' },
+    green: { background: 'var(--greenS)', color: 'var(--green)' },
+    navy: { background: 'var(--navyS)', color: 'var(--navy)' },
+    amber: { background: 'var(--amberS)', color: 'var(--amber)' },
+    red: { background: 'var(--redS)', color: 'var(--red)' },
+    purple: { background: 'var(--purpleS)', color: 'var(--purple)' },
+    solid: { background: 'var(--inv)', color: 'var(--invtx)' },
+  };
+  const custom = bg || color ? { background: bg, color } : null;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 11px', borderRadius: 'var(--sh-full)', background: bg, color, fontSize: 11.5, fontWeight: 800, ...style }}>
-      {icon && <Icon name={icon} size={14} fill />}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 26, padding: '0 10px', borderRadius: 99, font: '700 11px Manrope,sans-serif', whiteSpace: 'nowrap', ...(tones[tone] || tones.default), ...custom, ...style }}>
+      {icon && <Icon name={icon} size={13} fill />}
       {children}
     </span>
   );
 }
 
-/* Tile de estadística con icono en contenedor tonal */
-export function StatTile({ icon, value, label, tone = 'primary' }) {
+/* Fila de la cola de aprobación: icono, texto y cifra en mono. */
+export function QueueRow({ icon, tone = 'amber', label, sub, count, onClick }) {
   const tones = {
-    primary: ['var(--primary-container)', 'var(--on-primary-container)'],
-    secondary: ['var(--secondary-container)', 'var(--on-secondary-container)'],
-    tertiary: ['var(--tertiary-container)', 'var(--on-tertiary-container)'],
+    green: ['var(--greenS)', 'var(--green)'],
+    navy: ['var(--navyS)', 'var(--navy)'],
+    amber: ['var(--amberS)', 'var(--amber)'],
+    red: ['var(--redS)', 'var(--red)'],
+    purple: ['var(--purpleS)', 'var(--purple)'],
   };
-  const [bg, fg] = tones[tone];
+  const [bg, fg] = tones[tone] || tones.amber;
   return (
-    <Card style={{ padding: 14 }}>
-      <span style={{ width: 34, height: 34, borderRadius: 'var(--sh-sm)', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={18} fill color={fg} />
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px', borderRadius: 11, background: 'var(--sf)', textAlign: 'left', width: '100%' }}>
+      <span style={{ width: 30, height: 30, borderRadius: 9, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+        <Icon name={icon} size={16} fill color={fg} />
       </span>
-      <div className="dsp" style={{ fontWeight: 800, fontSize: 19, marginTop: 10 }}>{value}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--on-surface-variant)', marginTop: 2 }}>{label}</div>
-    </Card>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', font: '700 12.5px Manrope,sans-serif' }}>{label}</span>
+        <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>{sub}</span>
+      </span>
+      <span className="num" style={{ font: "800 17px 'IBM Plex Mono',monospace", color: fg, flex: 'none' }}>{count}</span>
+    </button>
   );
+}
+
+/* Barra de proporción, para la mezcla por servicio. */
+export function MixBar({ label, value, total, color = 'var(--green)' }) {
+  const pct = total ? Math.round((value / total) * 100) : 0;
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{ width: 9, height: 9, borderRadius: 3, background: color, flex: 'none' }} />
+        <span style={{ flex: 1, font: '600 12px Manrope,sans-serif' }}>{label}</span>
+        <span className="num" style={{ font: "700 12.5px 'IBM Plex Mono',monospace" }}>{value}</span>
+      </div>
+      <div style={{ height: 6, borderRadius: 99, background: 'var(--sf2)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: color, transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
+      </div>
+    </div>
+  );
+}
+
+export function Field({ label, icon, value, onChange, placeholder, type = 'text', rows, required }) {
+  const Tag = rows ? 'textarea' : 'input';
+  return (
+    <label style={{ display: 'block' }}>
+      {label && <span style={{ display: 'block', font: '700 11.5px Manrope,sans-serif', color: 'var(--mu)', marginBottom: 6 }}>{label}</span>}
+      <span style={{ display: 'flex', alignItems: rows ? 'flex-start' : 'center', gap: 9, padding: rows ? '11px 13px' : '0 13px', height: rows ? 'auto' : 46, borderRadius: 11, background: 'var(--sf)' }}>
+        {icon && <Icon name={icon} size={18} color="var(--mu)" style={{ marginTop: rows ? 2 : 0 }} />}
+        <Tag
+          required={required} type={rows ? undefined : type} rows={rows}
+          value={value} onChange={onChange} placeholder={placeholder}
+          style={{ flex: 1, width: '100%', font: '600 13.5px Manrope,sans-serif', resize: 'none', lineHeight: 1.45 }}
+        />
+      </span>
+    </label>
+  );
+}
+
+export function Select({ label, value, onChange, children }) {
+  return (
+    <label style={{ display: 'block' }}>
+      {label && <span style={{ display: 'block', font: '700 11.5px Manrope,sans-serif', color: 'var(--mu)', marginBottom: 6 }}>{label}</span>}
+      <select value={value} onChange={onChange} style={{ width: '100%', height: 46, padding: '0 13px', borderRadius: 11, background: 'var(--sf)', font: '600 13.5px Manrope,sans-serif', cursor: 'pointer' }}>
+        {children}
+      </select>
+    </label>
+  );
+}
+
+export function Spinner({ size = 36, color = 'var(--green)' }) {
+  return <div style={{ width: size, height: size, borderRadius: '50%', border: '3px solid var(--sf2)', borderTopColor: color, animation: 'trSpin 1s linear infinite' }} />;
 }
 
 export function EmptyState({ icon, title, body, action }) {
   return (
-    <Card style={{ padding: '32px 22px', textAlign: 'center' }}>
-      <span style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-        <Icon name={icon} size={27} color="var(--on-surface-variant)" />
+    <div className="dx-card" style={{ padding: '44px 24px', textAlign: 'center' }}>
+      <span style={{ width: 58, height: 58, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+        <Icon name={icon} size={26} color="var(--mu)" />
       </span>
-      <div className="dsp" style={{ fontWeight: 700, fontSize: 16.5, marginTop: 14 }}>{title}</div>
-      <div style={{ fontSize: 13, color: 'var(--on-surface-variant)', lineHeight: 1.5, marginTop: 5 }}>{body}</div>
-      {action && <div style={{ marginTop: 16 }}>{action}</div>}
-    </Card>
+      <div style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 15 }}>{title}</div>
+      <div style={{ font: '500 13px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginTop: 6 }}>{body}</div>
+      {action && <div style={{ marginTop: 18, display: 'flex', justifyContent: 'center' }}>{action}</div>}
+    </div>
   );
 }
 
-export function Spinner({ size = 44, color = 'var(--tertiary)' }) {
-  return <div style={{ width: size, height: size, borderRadius: '50%', border: '3px solid var(--surface-high)', borderTopColor: color, animation: 'dxSpin 1s linear infinite' }} />;
-}
-
-/* Switch MD3 con marca de verificación al activarse */
+/* Interruptor pequeño, para los ajustes del motor de despacho. */
 export function Switch({ checked, onChange, disabled }) {
   return (
     <button
@@ -119,43 +194,30 @@ export function Switch({ checked, onChange, disabled }) {
       role="switch"
       aria-checked={checked}
       style={{
-        width: 52, height: 32, borderRadius: 'var(--sh-full)', padding: 3, display: 'flex', flex: 'none',
-        background: checked ? 'var(--secondary)' : 'rgba(255,255,255,.22)',
-        border: checked ? '2px solid var(--secondary)' : '2px solid rgba(255,255,255,.34)',
+        width: 46, height: 27, borderRadius: 99, padding: 3, display: 'flex', flex: 'none',
+        background: checked ? 'var(--green)' : 'var(--sf2)',
       }}
     >
-      <span
-        style={{
-          width: checked ? 24 : 18, height: checked ? 24 : 18, borderRadius: '50%', background: '#fff',
-          margin: checked ? 0 : 3, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          transition: 'transform .22s var(--ease-out), width .18s var(--ease), height .18s var(--ease), margin .18s var(--ease)',
-          transform: checked ? 'translateX(20px)' : 'translateX(0)',
-        }}
-      >
-        {checked && <Icon name="check" size={14} color="var(--secondary)" style={{ fontWeight: 700 }} />}
-      </span>
+      <span style={{
+        width: 21, height: 21, borderRadius: '50%', background: '#fff',
+        transition: 'transform .2s cubic-bezier(.2,.8,.2,1)',
+        transform: checked ? 'translateX(19px)' : 'translateX(0)',
+        boxShadow: '0 1px 3px rgba(0,0,0,.25)',
+      }} />
     </button>
   );
 }
 
-/* Campo de texto MD3 (outlined) */
-export function Field({ label, icon, value, onChange, placeholder, type = 'text', rows, required }) {
-  const Tag = rows ? 'textarea' : 'input';
+/* Compatibilidad con pantallas que aún usan los nombres anteriores */
+export const Overline = ({ children, style }) => (
+  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--mu)', ...style }}>{children}</div>
+);
+export const Chip = Pill;
+export const StatTile = Kpi;
+export function HeroCard({ children, style }) {
   return (
-    <label style={{ display: 'block' }}>
-      <span style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: 'var(--on-surface-variant)', marginBottom: 6, letterSpacing: '.02em' }}>{label}</span>
-      <span style={{ display: 'flex', alignItems: rows ? 'flex-start' : 'center', gap: 10, padding: rows ? '12px 14px' : '0 14px', height: rows ? 'auto' : 52, borderRadius: 'var(--sh-sm)', background: 'var(--surface-lowest)', border: '1px solid var(--outline-variant)' }}>
-        {icon && <Icon name={icon} size={19} color="var(--on-surface-variant)" style={{ marginTop: rows ? 2 : 0 }} />}
-        <Tag
-          required={required}
-          type={rows ? undefined : type}
-          rows={rows}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          style={{ flex: 1, width: '100%', fontSize: 14.5, fontWeight: 600, resize: 'none', lineHeight: 1.45 }}
-        />
-      </span>
-    </label>
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: 22, background: 'var(--inv)', color: 'var(--invtx)', ...style }}>
+      {children}
+    </div>
   );
 }

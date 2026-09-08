@@ -3,67 +3,90 @@
 import { useRouter } from 'next/navigation';
 import TopBar from '../components/TopBar';
 import MapView from '../components/MapView';
-import { Icon, Card, HeroCard, Overline, Chip, Button, Spinner } from '../components/ui';
+import { Icon, Card, CardTitle, Kpi, Pill, Button, QueueRow, MixBar, Spinner } from '../components/ui';
 import { useOps } from '../context/OpsProvider';
 import { SERVICE_LABELS, SERVICE_ICON, STATUS_META, OPEN_STATUSES } from '../lib/ops';
 import { money } from '../lib/pricing';
 
-const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+/* Franjas horarias del día operativo de Domix. */
+const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
-function Kpi({ label, value, icon, tone = 'primary', hint, hintTone }) {
-  const tones = {
-    primary: ['var(--primary-container)', 'var(--on-primary-container)'],
-    secondary: ['var(--secondary-container)', 'var(--on-secondary-container)'],
-    tertiary: ['var(--tertiary-container)', 'var(--on-tertiary-container)'],
-  };
-  const [bg, fg] = tones[tone];
-  return (
-    <Card style={{ padding: 17 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--on-surface-variant)' }}>{label}</span>
-        <span style={{ width: 30, height: 30, borderRadius: 'var(--sh-xs)', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={17} fill color={fg} />
-        </span>
-      </div>
-      <div className="dsp" style={{ fontWeight: 800, fontSize: 26, marginTop: 10 }}>{value}</div>
-      {hint && <div style={{ fontSize: 11.5, fontWeight: 700, color: hintTone || 'var(--on-surface-variant)', marginTop: 4 }}>{hint}</div>}
-    </Card>
-  );
+const SERVICE_COLOR = {
+  mensajeria: 'var(--green)',
+  encomienda: 'var(--navy)',
+  domicilio: 'var(--amber)',
+  mandado: 'var(--purple)',
+  autorizacion_medica: 'var(--red)',
+};
+
+function hace(iso) {
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `hace ${h} h` : `hace ${Math.floor(h / 24)} d`;
 }
 
-export default function PanelPage() {
+export default function DashboardPage() {
   const router = useRouter();
   const { requests, couriers, branches, loading, stats, effectiveRules, suggestedSurge, isDemo } = useOps();
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 90 }}><Spinner /></div>;
+  if (loading) {
+    return (
+      <>
+        <TopBar title="Dashboard" subtitle="Cargando la operación…" />
+        <div className="dx-content" style={{ display: 'flex', justifyContent: 'center', paddingTop: 70 }}><Spinner /></div>
+      </>
+    );
+  }
 
-  const today = new Date().toDateString();
-  const hoy = requests.filter((r) => new Date(r.created_at).toDateString() === today);
+  const hoyStr = new Date().toDateString();
+  const hoy = requests.filter((r) => new Date(r.created_at).toDateString() === hoyStr);
   const entregadosHoy = hoy.filter((r) => r.status === 'delivered');
+  const canceladosHoy = hoy.filter((r) => r.status === 'cancelled');
   const ingresoHoy = entregadosHoy.reduce((s, r) => s + Number(r.price || 0), 0);
   const ticket = entregadosHoy.length ? Math.round(ingresoHoy / entregadosHoy.length) : 0;
-  const turboHoy = hoy.filter((r) => r.turbo).length;
+  const tasaCancel = hoy.length ? ((canceladosHoy.length / hoy.length) * 100).toFixed(1) : '0,0';
 
-  const semana = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return { key: d.toDateString(), label: DAYS[d.getDay()], total: 0, count: 0 };
+  // Minutos promedio entre que entra el pedido y queda asignado
+  const asignados = hoy.filter((r) => r.assigned_at);
+  const esperaProm = asignados.length
+    ? (asignados.reduce((s, r) => s + (new Date(r.assigned_at) - new Date(r.created_at)) / 60000, 0) / asignados.length).toFixed(1)
+    : '0,0';
+
+  // Pedidos por hora, apilando entregados y cancelados
+  const cols = HOURS.map((h) => {
+    const enHora = hoy.filter((r) => new Date(r.created_at).getHours() === h);
+    return {
+      h,
+      label: `${h}h`,
+      done: enHora.filter((r) => r.status !== 'cancelled').length,
+      cancel: enHora.filter((r) => r.status === 'cancelled').length,
+    };
   });
-  for (const r of requests) {
-    if (r.status !== 'delivered' || !r.delivered_at) continue;
-    const b = semana.find((x) => x.key === new Date(r.delivered_at).toDateString());
-    if (b) { b.total += Number(r.price || 0); b.count += 1; }
-  }
-  const maxSemana = Math.max(1, ...semana.map((b) => b.total));
-  const totalSemana = semana.reduce((s, b) => s + b.total, 0);
+  const maxCol = Math.max(1, ...cols.map((c) => c.done + c.cancel));
 
-  const porServicio = Object.keys(SERVICE_LABELS).map((k) => ({
-    key: k,
-    label: SERVICE_LABELS[k],
-    count: requests.filter((r) => r.service_type === k && r.status === 'delivered').length,
-  })).sort((a, b) => b.count - a.count);
-  const maxServicio = Math.max(1, ...porServicio.map((s) => s.count));
+  // Cola de decisiones humanas
+  const sinAsignar = requests.filter((r) => r.status === 'requested');
+  const demorados = sinAsignar.filter((r) => Date.now() - new Date(r.created_at).getTime() > 8 * 60000);
+  const turboActivos = requests.filter((r) => r.turbo && OPEN_STATUSES.includes(r.status));
+  const sinCuenta = couriers.filter((c) => !c.payout_account);
 
+  // Mezcla por servicio
+  const mezcla = Object.keys(SERVICE_LABELS)
+    .map((k) => ({ key: k, label: SERVICE_LABELS[k], count: requests.filter((r) => r.service_type === k).length }))
+    .sort((a, b) => b.count - a.count);
+  const totalMezcla = mezcla.reduce((s, m) => s + m.count, 0);
+
+  // Mejores repartidores de hoy
+  const ranking = couriers
+    .map((c) => {
+      const suyos = hoy.filter((r) => r.courier_id === c.id && r.status === 'delivered');
+      return { ...c, entregas: suyos.length, generado: suyos.reduce((s, r) => s + Number(r.price || 0), 0) };
+    })
+    .sort((a, b) => b.entregas - a.entregas || b.generado - a.generado)
+    .slice(0, 4);
+
+  const actividad = requests.slice(0, 6);
   const flota = couriers.filter((c) => c.lat != null).map((c) => ({
     lat: c.lat, lon: c.lon, status: c.status, name: `${c.first_name} ${c.last_name || ''}`.trim(),
   }));
@@ -72,170 +95,221 @@ export default function PanelPage() {
   return (
     <>
       <TopBar
-        title="Panel general"
-        subtitle={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
-        actions={<Button icon="add" onClick={() => router.push('/pedidos?nuevo=1')} style={{ height: 44 }}>Nuevo pedido</Button>}
+        title="Dashboard"
+        subtitle={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        actions={<Button icon="add" onClick={() => router.push('/pedidos?nuevo=1')}>Nuevo pedido</Button>}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 14 }}>
-        <Kpi label="Pedidos hoy" value={hoy.length} icon="receipt_long" tone="primary" hint={`${entregadosHoy.length} entregados`} />
-        <Kpi label="Sin asignar" value={stats.pending} icon="pending_actions" tone="tertiary" hint={stats.pending ? 'Requieren repartidor' : 'Todo asignado'} hintTone={stats.pending ? 'var(--tertiary)' : undefined} />
-        <Kpi label="Ingreso de hoy" value={money(ingresoHoy)} icon="payments" tone="secondary" hint={`Ticket ${money(ticket)}`} />
-        <Kpi label="Domix Turbo" value={turboHoy} icon="bolt" tone="tertiary" hint="Pedidos prioritarios hoy" />
-      </div>
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.5fr) minmax(0,1fr)', gap: 16, marginTop: 16, alignItems: 'start' }}>
-        <HeroCard glow="green" style={{ padding: 22 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Facturado esta semana</Overline>
-            <Chip icon="trending_up" bg="rgba(255,255,255,.12)" color="#A9D98F">Últimos 7 días</Chip>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 8 }}>
-            <span className="dsp" style={{ fontWeight: 800, fontSize: 36 }}>{money(totalSemana)}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.6)' }}>
-              {semana.reduce((s, b) => s + b.count, 0)} entregas
-            </span>
-          </div>
+        {/* Indicadores del día */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(186px,1fr))', gap: 14, marginBottom: 16 }}>
+          <Kpi label="PEDIDOS HOY" value={hoy.length} icon="receipt_long" tone="navy"
+               delta={`${entregadosHoy.length} entregados`} hint="· en el día" />
+          <Kpi label="FACTURACIÓN" value={money(ingresoHoy)} icon="payments" tone="green"
+               delta={`Ticket ${money(ticket)}`} deltaTone="var(--mu)" />
+          <Kpi label="TASA DE CANCELACIÓN" value={`${tasaCancel}%`} icon="cancel" tone="red"
+               delta={`${canceladosHoy.length} cancelados`} deltaTone="var(--mu)" />
+          <Kpi label="ESPERA PROMEDIO" value={`${esperaProm} min`} icon="timer" tone="amber"
+               delta="hasta asignar repartidor" deltaTone="var(--mu)" />
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 118, marginTop: 22 }}>
-            {semana.map((b) => {
-              const isToday = b.key === today;
+        {/* Pedidos por hora + cola de aprobación */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 14, marginBottom: 16, alignItems: 'start' }}>
+          <Card>
+            <CardTitle
+              sub={`Hoy · ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`}
+              right={
+                <div style={{ display: 'flex', gap: 14 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: 'var(--green)' }} />
+                    <span style={{ font: '600 11px Manrope,sans-serif', color: 'var(--mu)' }}>Completados</span>
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 9, height: 9, borderRadius: 3, background: 'var(--amber)' }} />
+                    <span style={{ font: '600 11px Manrope,sans-serif', color: 'var(--mu)' }}>Cancelados</span>
+                  </span>
+                </div>
+              }
+            >
+              Pedidos por hora
+            </CardTitle>
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 176 }}>
+              {cols.map((c) => (
+                <div key={c.h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, height: '100%', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 2, height: '100%' }}>
+                    {c.cancel > 0 && (
+                      <div style={{ width: '100%', height: `${(c.cancel / maxCol) * 100}%`, background: 'var(--amber)', borderRadius: '3px 3px 0 0', transformOrigin: 'bottom', animation: 'trBar .6s cubic-bezier(.2,.8,.2,1) both' }} />
+                    )}
+                    <div style={{ width: '100%', height: `${(c.done / maxCol) * 100}%`, background: 'var(--green)', borderRadius: c.cancel > 0 ? '0 0 2px 2px' : '3px 3px 2px 2px', transformOrigin: 'bottom', animation: 'trBar .6s cubic-bezier(.2,.8,.2,1) both' }} />
+                  </div>
+                  <div style={{ font: '600 9.5px Manrope,sans-serif', color: 'var(--mu)' }}>{c.label}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <CardTitle sub="Lo que espera una decisión hoy.">Cola de aprobación</CardTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <QueueRow
+                icon="pending_actions" tone="amber"
+                label="Pedidos sin asignar" sub="Necesitan repartidor"
+                count={sinAsignar.length} onClick={() => router.push('/pedidos')}
+              />
+              <QueueRow
+                icon="schedule" tone="red"
+                label="Demorados" sub="Más de 8 min esperando"
+                count={demorados.length} onClick={() => router.push('/pedidos')}
+              />
+              <QueueRow
+                icon="bolt" tone="navy"
+                label="Turbo en curso" sub="Con promesa de tiempo"
+                count={turboActivos.length} onClick={() => router.push('/turbo')}
+              />
+              <QueueRow
+                icon="account_balance" tone="purple"
+                label="Sin cuenta de retiro" sub="Repartidores por completar datos"
+                count={sinCuenta.length} onClick={() => router.push('/repartidores')}
+              />
+            </div>
+          </Card>
+        </div>
+
+        {/* Mezcla · Mejores repartidores · Actividad */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 14, marginBottom: 16 }}>
+          <Card>
+            <CardTitle>Mezcla por servicio</CardTitle>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {mezcla.map((m) => (
+                <MixBar key={m.key} label={m.label} value={m.count} total={totalMezcla} color={SERVICE_COLOR[m.key]} />
+              ))}
+              {totalMezcla === 0 && (
+                <div style={{ font: '500 12.5px Manrope,sans-serif', color: 'var(--mu)' }}>Todavía no hay pedidos para medir.</div>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <CardTitle right={<Button variant="ghost" onClick={() => router.push('/repartidores')} style={{ height: 28, padding: '0 8px', fontSize: 12 }}>Ver todos</Button>}>
+              Mejores repartidores hoy
+            </CardTitle>
+            {ranking.length === 0 && (
+              <div style={{ font: '500 12.5px Manrope,sans-serif', color: 'var(--mu)' }}>Sin repartidores registrados.</div>
+            )}
+            {ranking.map((c, i) => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderTop: i ? '1px solid var(--bd2)' : 'none' }}>
+                <span style={{ position: 'relative', width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px Manrope,sans-serif', flex: 'none' }}>
+                  {(c.first_name?.[0] || 'D').toUpperCase()}
+                  <span style={{ position: 'absolute', right: -1, bottom: -1, width: 11, height: 11, borderRadius: '50%', border: '2px solid var(--bg)', background: c.status === 'online' ? 'var(--green)' : c.status === 'busy' ? 'var(--navy)' : 'var(--mu)' }} />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', font: '700 12.5px Manrope,sans-serif' }}>{c.first_name} {c.last_name}</span>
+                  <span className="num" style={{ display: 'block', font: "500 10.5px 'IBM Plex Mono',monospace", color: 'var(--mu)', marginTop: 1 }}>
+                    {c.entregas} entregas · {money(c.generado)}
+                  </span>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 3, flex: 'none' }}>
+                  <Icon name="star" size={13} fill color="var(--amber)" />
+                  <span className="num" style={{ font: "700 12px 'IBM Plex Mono',monospace" }}>{Number(c.rating || 5).toFixed(1)}</span>
+                </span>
+              </div>
+            ))}
+          </Card>
+
+          <Card>
+            <CardTitle right={<Button variant="ghost" onClick={() => router.push('/pedidos')} style={{ height: 28, padding: '0 8px', fontSize: 12 }}>Ver todo</Button>}>
+              Actividad reciente
+            </CardTitle>
+            {actividad.length === 0 && (
+              <div style={{ font: '500 12.5px Manrope,sans-serif', color: 'var(--mu)' }}>
+                {isDemo ? 'Sin datos de demo.' : 'Aún no entran pedidos reales.'}
+              </div>
+            )}
+            {actividad.map((r, i) => {
+              const st = STATUS_META[r.status] || STATUS_META.requested;
               return (
-                <div key={b.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  {b.total > 0 && <span style={{ fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,.8)' }}>{Math.round(b.total / 1000)}k</span>}
-                  <span style={{
-                    width: '100%', height: Math.max(6, (b.total / maxSemana) * 72), borderRadius: '6px 6px 3px 3px',
-                    background: isToday ? 'linear-gradient(180deg,#4EA33C,#2F7A24)' : 'rgba(255,255,255,.18)',
-                    transition: 'height .45s var(--ease-out)',
-                  }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: isToday ? '#A9D98F' : 'rgba(255,255,255,.5)' }}>{b.label}</span>
+                <div key={r.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderTop: i ? '1px solid var(--bd2)' : 'none' }}>
+                  <span style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                    <Icon name={SERVICE_ICON[r.service_type]} size={15} color="var(--mu)" />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', font: '600 12px/1.4 Manrope,sans-serif' }}>
+                      {SERVICE_LABELS[r.service_type]} · {st.label}
+                    </span>
+                    <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.contact_name || 'Cliente'} · {hace(r.created_at)}
+                    </span>
+                  </span>
+                  <span className="num" style={{ font: "700 12px 'IBM Plex Mono',monospace", flex: 'none' }}>{money(r.price)}</span>
                 </div>
               );
             })}
-          </div>
-        </HeroCard>
+          </Card>
+        </div>
 
-        <Card style={{ padding: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 14.5, fontWeight: 800 }}>Estado de la flota</span>
-            <Button variant="text" onClick={() => router.push('/repartidores')} style={{ height: 30, fontSize: 12.5 }}>Ver todos</Button>
-          </div>
-
-          {couriers.length === 0 && <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)' }}>Aún no hay repartidores registrados.</div>}
-
-          {couriers.slice(0, 5).map((c, i) => {
-            const on = c.status === 'online';
-            const activos = requests.filter((r) => r.courier_id === c.id && OPEN_STATUSES.includes(r.status)).length;
-            return (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 0', borderTop: i ? '1px solid var(--outline-variant)' : 'none' }}>
-                <span style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', background: 'var(--primary-container)', color: 'var(--on-primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flex: 'none' }}>
-                  {(c.first_name?.[0] || 'D').toUpperCase()}
-                  <span style={{ position: 'absolute', right: -1, bottom: -1, width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--surface-lowest)', background: on ? 'var(--secondary)' : c.status === 'busy' ? 'var(--tertiary)' : 'var(--outline)' }} />
-                </span>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>{c.first_name} {c.last_name}</span>
-                  <span style={{ display: 'block', fontSize: 11, color: 'var(--on-surface-variant)', marginTop: 1 }}>
-                    {on ? `En línea · ${c.work_zone}` : c.status === 'busy' ? 'En entrega' : 'Desconectado'}
-                  </span>
-                </span>
-                {activos > 0 && <Chip bg="var(--primary-container)" color="var(--on-primary-container)">{activos}</Chip>}
-              </div>
-            );
-          })}
-        </Card>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16, marginTop: 16, alignItems: 'start' }}>
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 18px 12px' }}>
-            <span style={{ fontSize: 14.5, fontWeight: 800 }}>Flota en el mapa</span>
-            <Button variant="text" onClick={() => router.push('/mapa')} style={{ height: 30, fontSize: 12.5 }}>Ampliar</Button>
-          </div>
-          <MapView
-            height={250}
-            center={centro ? { lat: centro.center_lat, lon: centro.center_lon } : undefined}
-            couriers={flota}
-            radiusKm={centro?.coverage_radius_km}
-            style={{ borderRadius: 0, border: 'none', borderTop: '1px solid var(--outline-variant)' }}
-          />
-        </Card>
-
-        <Card style={{ padding: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <span style={{ fontSize: 14.5, fontWeight: 800 }}>Servicios más pedidos</span>
-            <Chip icon="insights">Histórico</Chip>
-          </div>
-          {porServicio.map((s) => (
-            <div key={s.key} style={{ marginBottom: 13 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
-                <Icon name={SERVICE_ICON[s.key]} size={17} color="var(--primary)" />
-                <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>{s.label}</span>
-                <span className="dsp" style={{ fontSize: 13, fontWeight: 800 }}>{s.count}</span>
-              </div>
-              <div style={{ height: 7, borderRadius: 99, background: 'var(--surface-container)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(s.count / maxServicio) * 100}%`, borderRadius: 99, background: 'linear-gradient(90deg,#3E9330,#2F7A24)', transition: 'width .5s var(--ease-out)' }} />
-              </div>
+        {/* Flota en el mapa + estado del motor */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) minmax(0,1fr)', gap: 14 }}>
+          <Card padding={0} style={{ overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 12px' }}>
+              <div style={{ font: '800 15px Manrope,sans-serif', letterSpacing: '-.025em' }}>Flota en el mapa</div>
+              <Button variant="ghost" onClick={() => router.push('/mapa')} style={{ height: 28, padding: '0 8px', fontSize: 12 }}>Ampliar</Button>
             </div>
-          ))}
+            <MapView
+              height={260}
+              center={centro ? { lat: centro.center_lat, lon: centro.center_lon } : undefined}
+              couriers={flota}
+              radiusKm={centro?.coverage_radius_km}
+              style={{ borderRadius: 0, border: 'none', borderTop: '1px solid var(--bd2)' }}
+            />
+          </Card>
 
-          <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--outline-variant)', display: 'flex', alignItems: 'center', gap: 11 }}>
-            <span style={{ width: 40, height: 40, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-              <Icon name="trending_up" size={20} fill color="var(--on-tertiary-container)" />
-            </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 12.5, fontWeight: 800 }}>Tarifa dinámica {effectiveRules.surge.toFixed(1)}×</span>
-              <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
-                {effectiveRules.autoSurge ? `Automática según demanda (sugerido ${suggestedSurge.toFixed(1)}×)` : 'Fijada manualmente'}
+          <Card>
+            <CardTitle sub="Cómo se está cobrando ahora mismo.">Motor de despacho</CardTitle>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderRadius: 11, background: 'var(--sf)', marginBottom: 10 }}>
+              <span style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--navyS)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <Icon name="trending_up" size={17} fill color="var(--navy)" />
               </span>
-            </span>
-            <Button variant="outlined" onClick={() => router.push('/despacho')} style={{ height: 36, fontSize: 12.5, padding: '0 13px' }}>Ajustar</Button>
-          </div>
-        </Card>
-      </div>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', font: '700 12.5px Manrope,sans-serif' }}>Tarifa por demanda</span>
+                <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>
+                  {effectiveRules.autoSurge ? `Automática · sugerido ${suggestedSurge.toFixed(1)}×` : 'Fijada a mano'}
+                </span>
+              </span>
+              <span className="num" style={{ font: "800 17px 'IBM Plex Mono',monospace", color: 'var(--navy)' }}>
+                {effectiveRules.surge.toFixed(1)}×
+              </span>
+            </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '24px 0 12px' }}>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>Pedidos recientes</span>
-        <Button variant="text" onClick={() => router.push('/pedidos')} style={{ height: 32, fontSize: 12.5 }}>Ver tablero</Button>
-      </div>
+            {[
+              { l: 'Tarifa base', v: money(effectiveRules.baseFare), h: `hasta ${effectiveRules.baseKm} km` },
+              { l: 'Km adicional', v: money(effectiveRules.perKm), h: 'por kilómetro' },
+              { l: 'Recargo Turbo', v: money(effectiveRules.turboFee), h: `radio ${effectiveRules.turboRadiusKm} km` },
+              { l: 'Pago al repartidor', v: `${effectiveRules.courierSharePct}%`, h: 'de cada tarifa' },
+            ].map((row) => (
+              <div key={row.l} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: '1px solid var(--bd2)' }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', font: '600 12px Manrope,sans-serif' }}>{row.l}</span>
+                  <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>{row.h}</span>
+                </span>
+                <span className="num" style={{ font: "700 13px 'IBM Plex Mono',monospace" }}>{row.v}</span>
+              </div>
+            ))}
 
-      <Card style={{ padding: '14px 0 4px', overflowX: 'auto' }}>
-        <table className="dx-table">
-          <thead>
-            <tr><th>Servicio</th><th>Código</th><th>Ruta</th><th>Cliente</th><th>Estado</th><th style={{ textAlign: 'right' }}>Valor</th></tr>
-          </thead>
-          <tbody>
-            {requests.slice(0, 8).map((r) => {
-              const st = STATUS_META[r.status] || STATUS_META.requested;
-              return (
-                <tr key={r.id} onClick={() => router.push('/pedidos')} style={{ cursor: 'pointer' }}>
-                  <td>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 700 }}>
-                      <span style={{ width: 32, height: 32, borderRadius: 'var(--sh-xs)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                        <Icon name={SERVICE_ICON[r.service_type]} size={17} color="var(--on-primary-container)" />
-                      </span>
-                      {SERVICE_LABELS[r.service_type]}
-                      {r.turbo && <Icon name="bolt" size={15} fill color="var(--secondary)" />}
-                    </span>
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--on-surface-variant)' }}>#{r.tracking_code}</td>
-                  <td style={{ maxWidth: 250 }}>
-                    <span style={{ display: 'block', fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.pickup_address}</span>
-                    <span style={{ display: 'block', fontSize: 12, color: 'var(--on-surface-variant)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>→ {r.dropoff_address}</span>
-                  </td>
-                  <td style={{ fontSize: 12.5 }}>{r.contact_name || '—'}</td>
-                  <td><Chip bg={st.bg} color={st.fg}>{st.label}</Chip></td>
-                  <td className="dsp" style={{ textAlign: 'right', fontWeight: 800, fontSize: 15 }}>{money(r.price)}</td>
-                </tr>
-              );
-            })}
-            {requests.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 34, color: 'var(--on-surface-variant)' }}>
-                {isDemo ? 'Sin datos de demo.' : 'Todavía no hay pedidos reales. Los que pidan los clientes aparecerán aquí al instante.'}
-              </td></tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
+            <div style={{ display: 'flex', gap: 7, marginTop: 14, flexWrap: 'wrap' }}>
+              {effectiveRules.rainActive && <Pill icon="rainy" tone="navy">Lluvia activa</Pill>}
+              {effectiveRules.nightActive && <Pill icon="dark_mode" tone="amber">Nocturno +{effectiveRules.nightSurchargePct}%</Pill>}
+              {effectiveRules.autoAssign && <Pill icon="near_me" tone="green">Asignación automática</Pill>}
+            </div>
+
+            <Button variant="outline" onClick={() => router.push('/despacho')} style={{ width: '100%', marginTop: 14 }}>
+              Ajustar reglas
+            </Button>
+          </Card>
+        </div>
+      </div>
     </>
   );
 }

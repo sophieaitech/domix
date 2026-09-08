@@ -97,6 +97,8 @@ export default function SedesPage() {
         actions={<Button icon="add_business" onClick={() => setNueva(true)} style={{ height: 44 }}>Abrir ciudad</Button>}
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       {nueva && <NuevaSede isDemo={isDemo} setBranches={setBranches} onClose={() => setNueva(false)} onCreated={() => { setNueva(false); if (!isDemo) reload(); }} />}
 
       {branches.length === 0 && (
@@ -171,6 +173,7 @@ export default function SedesPage() {
             </Card>
           );
         })}
+      </div>
       </div>
     </>
   );

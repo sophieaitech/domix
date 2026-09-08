@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import BottomNav from '../../components/BottomNav';
 import { Icon, SectionTitle, Row, Pill } from '../../components/ui';
-import { SERVICES } from '../../lib/services';
+import { SERVICES, NEGOCIO_PASOS } from '../../lib/services';
 import { money, DEFAULT_RULES } from '../../lib/pricing';
 
 const WHATSAPP = 'https://wa.me/573157924906';
@@ -56,6 +56,38 @@ export default function ServiciosPage() {
               </div>
             </div>
           </button>
+        </div>
+
+        <SectionTitle>¿Tienes un negocio?</SectionTitle>
+        <div style={{ padding: '0 16px 24px' }}>
+          <div style={{ borderRadius: 18, border: '1px solid var(--bd)', overflow: 'hidden' }}>
+            <div style={{ padding: '18px 18px 14px', background: 'var(--sf)' }}>
+              <div style={{ font: '800 19px/1.25 Manrope,sans-serif', letterSpacing: '-.03em' }}>
+                Nosotros somos<br />tu domiciliario.
+              </div>
+              <div style={{ font: '500 12.5px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginTop: 7 }}>
+                ¿Tienes una tienda virtual o negocio pero no tienes domiciliario?
+                Nos encargamos de la entrega para que tú solo vendas.
+              </div>
+            </div>
+
+            <div style={{ padding: '14px 16px 16px' }}>
+              {NEGOCIO_PASOS.map((p, i) => (
+                <div key={p.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderTop: i ? '1px solid var(--bd2)' : 'none' }}>
+                  <span style={{ width: 34, height: 34, borderRadius: 10, background: `var(--${p.tone}S)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                    <Icon name={p.icon} size={18} fill color={`var(--${p.tone})`} />
+                  </span>
+                  <span style={{ flex: 1, font: '700 13.5px Manrope,sans-serif' }}>{p.label}</span>
+                  <span className="num" style={{ font: '700 11px Manrope,sans-serif', color: 'var(--mu)' }}>{i + 1}</span>
+                </div>
+              ))}
+
+              <a href={WHATSAPP} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, background: 'var(--inv)', color: 'var(--invtx)', font: '700 14.5px Manrope,sans-serif', marginTop: 14 }}>
+                <Icon name="storefront" size={19} fill />
+                Quiero que Domix entregue lo mío
+              </a>
+            </div>
+          </div>
         </div>
 
         <SectionTitle>¿Prefieres hablar?</SectionTitle>

@@ -1,34 +1,34 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { Icon, Chip } from './ui';
+import { Icon } from './ui';
 import { useOps } from '../context/OpsProvider';
 
-const GROUPS = [
+const NAV = [
   {
-    label: 'Operación',
+    title: 'OPERACIÓN',
     items: [
-      { label: 'Panel general', path: '/', icon: 'dashboard' },
+      { label: 'Dashboard', path: '/', icon: 'dashboard' },
       { label: 'Pedidos en vivo', path: '/pedidos', icon: 'receipt_long', badge: 'pending' },
-      { label: 'Mapa de flota', path: '/mapa', icon: 'explore' },
+      { label: 'Mapa en vivo', path: '/mapa', icon: 'explore' },
     ],
   },
   {
-    label: 'Red Domix',
+    title: 'RED DOMIX',
     items: [
       { label: 'Repartidores', path: '/repartidores', icon: 'two_wheeler' },
       { label: 'Sedes y ciudades', path: '/sedes', icon: 'location_city' },
     ],
   },
   {
-    label: 'Configuración',
+    title: 'DINERO',
     items: [
       { label: 'Motor de despacho', path: '/despacho', icon: 'tune' },
       { label: 'Domix Turbo', path: '/turbo', icon: 'bolt', tag: 'PRO' },
     ],
   },
   {
-    label: 'Seguridad y equipo',
+    title: 'SISTEMA',
     items: [
       { label: 'Roles y permisos', path: '/equipo', icon: 'shield_person' },
     ],
@@ -42,41 +42,47 @@ export default function Sidebar() {
 
   return (
     <aside className="dx-sidebar">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '0 8px 20px' }}>
-        <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: 'linear-gradient(150deg,#3E9330,#2F7A24)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 4px 14px rgba(47,122,36,.3)' }}>
-          <Icon name="two_wheeler" size={23} fill color="#fff" />
+      {/* Marca */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '0 10px 20px' }}>
+        <span style={{ width: 38, height: 38, borderRadius: 11, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', overflow: 'hidden' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/domix-logo.jpg" alt="Domix" style={{ width: 42, height: 42, objectFit: 'contain' }} />
         </span>
         <span style={{ minWidth: 0 }}>
-          <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 19, lineHeight: 1 }}>
-            Domi<span style={{ color: '#8CCB6E' }}>X</span>
+          <span style={{ display: 'flex', alignItems: 'flex-end', gap: 2.5 }}>
+            <span style={{ font: '800 17px/1 Manrope,sans-serif', letterSpacing: '-.05em' }}>
+              Domi<span style={{ color: '#5FBF45' }}>X</span>
+            </span>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#5FBF45', marginBottom: 3 }} />
           </span>
-          <span style={{ display: 'block', fontSize: 9, fontWeight: 800, letterSpacing: '.1em', color: 'rgba(255,255,255,.5)', marginTop: 3 }}>
-            PANEL INTERNO
+          <span style={{ display: 'block', font: '600 9px Manrope,sans-serif', letterSpacing: '.12em', color: 'rgba(255,255,255,.45)', marginTop: 4 }}>
+            EQUIPO · BUENAVENTURA
           </span>
         </span>
       </div>
 
-      <nav className="sc" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {GROUPS.map((g) => (
-          <div key={g.label} style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.11em', color: 'rgba(255,255,255,.38)', padding: '0 12px 7px' }}>
-              {g.label.toUpperCase()}
+      {/* Navegación agrupada */}
+      <nav className="sb" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        {NAV.map((group) => (
+          <div key={group.title} style={{ marginBottom: 16 }}>
+            <div style={{ font: '600 9.5px Manrope,sans-serif', letterSpacing: '.12em', color: 'rgba(255,255,255,.34)', padding: '0 11px 7px' }}>
+              {group.title}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {g.items.map((n) => {
+              {group.items.map((n) => {
                 const active = pathname === n.path;
                 const badge = n.badge === 'pending' ? stats.pending : 0;
                 return (
                   <button key={n.path} className="dx-navitem" data-active={active} onClick={() => router.push(n.path)}>
-                    <Icon name={n.icon} size={20} fill={active} />
+                    <Icon name={n.icon} size={19} fill={active} />
                     <span style={{ flex: 1 }}>{n.label}</span>
                     {badge > 0 && (
-                      <span style={{ minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999, background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span className="num" style={{ minWidth: 19, height: 19, padding: '0 5px', borderRadius: 99, background: '#c98a1e', color: '#fff', font: "700 10.5px 'IBM Plex Mono',monospace", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {badge}
                       </span>
                     )}
                     {n.tag && (
-                      <span style={{ padding: '2px 7px', borderRadius: 999, background: 'rgba(123,198,83,.2)', color: '#A9D98F', fontSize: 9, fontWeight: 800, letterSpacing: '.05em' }}>
+                      <span style={{ padding: '2px 6px', borderRadius: 99, background: 'rgba(95,191,69,.18)', color: '#8FD46E', font: '800 8.5px Manrope,sans-serif', letterSpacing: '.06em' }}>
                         {n.tag}
                       </span>
                     )}
@@ -88,14 +94,15 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div style={{ borderRadius: 'var(--sh-md)', padding: 13, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: stats.online ? '#8CCB6E' : '#8A8D91', animation: stats.online ? 'dxGlow 1.4s infinite' : 'none' }} />
-          <span style={{ fontSize: 12, fontWeight: 800 }}>{stats.online} en línea</span>
-        </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)', marginTop: 4 }}>
-          {stats.open} pedidos activos · WhatsApp 315 792 4906
-        </div>
+      {/* Pie: quién está operando */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 11px 0', borderTop: '1px solid rgba(255,255,255,.09)' }}>
+        <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px Manrope,sans-serif', flex: 'none' }}>
+          DX
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', font: '700 12px Manrope,sans-serif' }}>Equipo Domix</span>
+          <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Operaciones</span>
+        </span>
       </div>
     </aside>
   );

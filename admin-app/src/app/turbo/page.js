@@ -46,6 +46,8 @@ export default function TurboPage() {
         actions={<Button icon={saved ? 'check' : 'save'} color={saved ? 'var(--secondary)' : undefined} onClick={guardar} style={{ height: 44 }}>{saved ? 'Guardado' : 'Guardar Turbo'}</Button>}
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       {/* Portada de marca */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--sh-xl)', padding: 30, color: '#fff', background: 'linear-gradient(135deg,#2E7BC4 0%,#1B4F8F 45%,#0F2E52 100%)', boxShadow: 'var(--elev-4)' }}>
         <div style={{ position: 'absolute', right: -70, top: -90, width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,255,255,.28),transparent 70%)' }} />
@@ -191,6 +193,7 @@ export default function TurboPage() {
             </div>
           </div>
         </Card>
+      </div>
       </div>
     </>
   );

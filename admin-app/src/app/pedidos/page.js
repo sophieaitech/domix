@@ -294,6 +294,8 @@ function PedidosContent() {
         actions={<Button icon="add" onClick={() => setNuevo(true)} style={{ height: 44 }}>Nuevo pedido</Button>}
       />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       {nuevo && <NuevoPedido rules={effectiveRules} onClose={() => setNuevo(false)} onCreate={createRequest} />}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -345,6 +347,7 @@ function PedidosContent() {
       )}
 
       {detail && <OrderDrawer req={detail} couriers={couriers} onClose={() => setDetail(null)} onAdvance={advance} />}
+      </div>
     </>
   );
 }

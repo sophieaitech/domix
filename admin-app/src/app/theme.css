@@ -1,215 +1,175 @@
 /* ============================================================
-   Domix — Sistema de diseño
-   Base cálida y sobria (la misma familia de neutros de Turafood),
-   con la identidad Domix: verde de marca para la acción y azul
-   marino para lo prioritario. Sin naranjas fuertes.
+   Domix Panel — sistema de diseño estilo Turapp Admin
+   Lienzo gris cálido, tarjetas blancas de borde fino, barra lateral
+   oscura y cifras en IBM Plex Mono. Acentos de marca Domix.
    ============================================================ */
 
 :root{
-  /* --- Identidad de marca (del logo Domix) --- */
-  --dx-green:#2F7A24;   --dx-green-dark:#35761F;  --dx-green-soft:#E8F1E2;
-  --dx-navy:#1B4F8F;    --dx-navy-dark:#123B6B;   --dx-navy-soft:#E5EBF3;
-  --dx-ink:#17140F;     --dx-ink-2:#241F1A;       --dx-ink-3:#12100D;
+  --bg:#ffffff;
+  --sf:#f4f4f3;
+  --sf2:#eaeae8;
+  --bd:rgba(0,0,0,.10);
+  --bd2:rgba(0,0,0,.06);
+  --tx:#0a0a0a;
+  --mu:#6f6f6f;
+  --inv:#0a0a0a;
+  --invtx:#ffffff;
+  --side:#0f1011;
 
-  /* --- Roles de color --- */
-  --primary:#2F7A24;              --on-primary:#FFFFFF;
-  --primary-container:#E4EFDE;    --on-primary-container:#1D460F;
-  --secondary:#1B4F8F;            --on-secondary:#FFFFFF;
-  --secondary-container:#E5EBF3;  --on-secondary-container:#123B6B;
-  --tertiary:#B8801C;             --on-tertiary:#FFFFFF;
-  --tertiary-container:#FAF0DD;   --on-tertiary-container:#6E4B07;
-  --error:#C8402F;                --on-error:#FFFFFF;
-  --error-container:#FBECEB;      --on-error-container:#6B1F16;
+  /* Acentos de marca Domix */
+  --green:#2F7A24;   --greenS:#EAF3E6;
+  --navy:#1B4F8F;    --navyS:#E9EFF7;
+  --amber:#c98a1e;   --amberS:#faf0dd;
+  --red:#c8402f;     --redS:#fbeceb;
+  --purple:#6B2FD6;  --purpleS:#F1ECFC;
 
-  /* Superficies cálidas */
-  --surface:#F6F5F2;
-  --surface-lowest:#FFFFFF;
-  --surface-low:#FAF9F7;
-  --surface-container:#F0EEE9;
-  --surface-high:#EAE7E1;
-  --surface-highest:#E4E1DA;
-  --surface-dim:#E7E5E1;
-  --on-surface:#17140F;
-  --on-surface-variant:#8C857B;
-  --outline:#B6AFA4;
-  --outline-variant:rgba(20,16,10,.12);
-  --scrim:rgba(20,16,10,.36);
-
-  /* Superficie oscura (hero, sidebar, cabeceras) */
-  --inverse-surface:#17140F;
-  --on-inverse-surface:#F6F5F2;
-
-  /* --- Escala de forma --- */
-  --sh-xs:8px; --sh-sm:12px; --sh-md:16px; --sh-lg:20px; --sh-xl:28px; --sh-full:999px;
-
-  /* --- Elevación, teñida al neutro cálido --- */
-  --elev-1:0 1px 2px rgba(20,16,10,.07), 0 1px 3px rgba(20,16,10,.05);
-  --elev-2:0 2px 5px rgba(20,16,10,.07), 0 3px 10px rgba(20,16,10,.06);
-  --elev-3:0 4px 12px rgba(20,16,10,.09), 0 8px 26px rgba(20,16,10,.07);
-  --elev-4:0 10px 22px rgba(20,16,10,.12), 0 18px 48px rgba(20,16,10,.10);
-
-  /* --- Movimiento --- */
-  --ease:cubic-bezier(.2,0,0,1);
-  --ease-out:cubic-bezier(.05,.7,.1,1);
+  --sh:0 10px 34px rgba(0,0,0,.13);
+  --sh2:0 2px 10px rgba(0,0,0,.07);
+  --sh3:0 6px 26px rgba(0,0,0,.18);
 }
 
-/* ============================================================
-   Tema oscuro — mismos roles, en neutros cálidos oscuros.
-   data-theme="dark" fuerza oscuro; "auto" sigue al sistema.
-   ============================================================ */
 :root[data-theme="dark"]{
-  --primary:#8CCB6E;              --on-primary:#16330A;
-  --primary-container:#2C6318;    --on-primary-container:#D9EFCC;
-  --secondary:#9FC2ED;            --on-secondary:#0F2E52;
-  --secondary-container:#1B4F8F;  --on-secondary-container:#DCE8F7;
-  --tertiary:#E8BC6A;             --on-tertiary:#3E2A00;
-  --tertiary-container:#7A5608;   --on-tertiary-container:#FBEBCB;
-  --error:#F0705E;                --on-error:#4E140C;
-  --error-container:#8C2B1E;      --on-error-container:#FBDCD8;
+  --bg:#141517;
+  --sf:#0d0e10;
+  --sf2:#1e2023;
+  --bd:rgba(255,255,255,.13);
+  --bd2:rgba(255,255,255,.07);
+  --tx:#f7f7f8;
+  --mu:#9a9aa0;
+  --inv:#ffffff;
+  --invtx:#0a0a0a;
+  --side:#08090a;
 
-  --surface:#14120F;
-  --surface-lowest:#0E0C0A;
-  --surface-low:#191612;
-  --surface-container:#1F1B17;
-  --surface-high:#28231E;
-  --surface-highest:#332D26;
-  --surface-dim:#0A0908;
-  --on-surface:#EDE9E3;
-  --on-surface-variant:#A9A198;
-  --outline:#7D766D;
-  --outline-variant:rgba(246,245,242,.14);
-  --scrim:rgba(0,0,0,.62);
+  --green:#5FBF45;   --greenS:#14260F;
+  --navy:#7FB0E8;    --navyS:#101E2D;
+  --amber:#e9b45f;   --amberS:#241c0e;
+  --red:#f0705e;     --redS:#2a1512;
+  --purple:#A98BF0;  --purpleS:#1B1430;
 
-  --inverse-surface:#F6F5F2;
-  --on-inverse-surface:#17140F;
-
-  --elev-1:0 1px 2px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.35);
-  --elev-2:0 2px 5px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.38);
-  --elev-3:0 6px 14px rgba(0,0,0,.55), 0 10px 28px rgba(0,0,0,.42);
-  --elev-4:0 10px 22px rgba(0,0,0,.6), 0 20px 46px rgba(0,0,0,.5);
+  --sh:0 10px 34px rgba(0,0,0,.6);
+  --sh2:0 2px 10px rgba(0,0,0,.4);
+  --sh3:0 6px 26px rgba(0,0,0,.55);
 }
 
 @media (prefers-color-scheme:dark){
   :root[data-theme="auto"]{
-    --primary:#8CCB6E;              --on-primary:#16330A;
-    --primary-container:#2C6318;    --on-primary-container:#D9EFCC;
-    --secondary:#9FC2ED;            --on-secondary:#0F2E52;
-    --secondary-container:#1B4F8F;  --on-secondary-container:#DCE8F7;
-    --tertiary:#E8BC6A;             --on-tertiary:#3E2A00;
-    --tertiary-container:#7A5608;   --on-tertiary-container:#FBEBCB;
-    --error:#F0705E;                --on-error:#4E140C;
-    --error-container:#8C2B1E;      --on-error-container:#FBDCD8;
-    --surface:#14120F; --surface-lowest:#0E0C0A; --surface-low:#191612;
-    --surface-container:#1F1B17; --surface-high:#28231E; --surface-highest:#332D26; --surface-dim:#0A0908;
-    --on-surface:#EDE9E3; --on-surface-variant:#A9A198;
-    --outline:#7D766D; --outline-variant:rgba(246,245,242,.14); --scrim:rgba(0,0,0,.62);
-    --inverse-surface:#F6F5F2; --on-inverse-surface:#17140F;
-    --elev-1:0 1px 2px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.35);
-    --elev-2:0 2px 5px rgba(0,0,0,.5), 0 4px 10px rgba(0,0,0,.38);
-    --elev-3:0 6px 14px rgba(0,0,0,.55), 0 10px 28px rgba(0,0,0,.42);
-    --elev-4:0 10px 22px rgba(0,0,0,.6), 0 20px 46px rgba(0,0,0,.5);
+    --bg:#141517; --sf:#0d0e10; --sf2:#1e2023;
+    --bd:rgba(255,255,255,.13); --bd2:rgba(255,255,255,.07);
+    --tx:#f7f7f8; --mu:#9a9aa0; --inv:#ffffff; --invtx:#0a0a0a; --side:#08090a;
+    --green:#5FBF45; --greenS:#14260F; --navy:#7FB0E8; --navyS:#101E2D;
+    --amber:#e9b45f; --amberS:#241c0e; --red:#f0705e; --redS:#2a1512;
+    --purple:#A98BF0; --purpleS:#1B1430;
+    --sh:0 10px 34px rgba(0,0,0,.6); --sh2:0 2px 10px rgba(0,0,0,.4); --sh3:0 6px 26px rgba(0,0,0,.55);
   }
 }
 
-:root[data-theme="dark"] body,
-:root[data-theme="dark"] .dx-shell{background:var(--surface)}
+/* ------------------------------------------------------------
+   Alias para los componentes compartidos (mapa, switches, campos)
+   ------------------------------------------------------------ */
+:root{
+  --surface:var(--bg);
+  --surface-lowest:var(--bg);
+  --surface-low:var(--sf);
+  --surface-container:var(--sf);
+  --surface-high:var(--sf2);
+  --on-surface:var(--tx);
+  --on-surface-variant:var(--mu);
+  --outline:var(--mu);
+  --outline-variant:var(--bd2);
+  --scrim:rgba(0,0,0,.4);
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;height:100%}
+  --primary:var(--green);          --on-primary:#fff;
+  --primary-container:var(--greenS); --on-primary-container:var(--green);
+  --secondary:var(--navy);
+  --secondary-container:var(--navyS); --on-secondary-container:var(--navy);
+  --tertiary:var(--amber);
+  --tertiary-container:var(--amberS); --on-tertiary-container:var(--amber);
+  --error:var(--red);
+  --error-container:var(--redS);   --on-error-container:var(--red);
+
+  --sh-xs:8px; --sh-sm:11px; --sh-md:14px; --sh-lg:14px; --sh-xl:18px; --sh-full:99px;
+  --elev-1:none; --elev-2:var(--sh2); --elev-3:var(--sh2); --elev-4:var(--sh);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
 body{
-  font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
-  color:var(--on-surface);
-  background:var(--surface-dim);
+  font-family:Manrope,-apple-system,'Helvetica Neue',Helvetica,sans-serif;
+  letter-spacing:-.01em;
+  background:var(--sf);
+  color:var(--tx);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
 
-/* Tipografía de display: cifras y titulares */
-.dsp{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em}
+/* Compatibilidad: .dsp era la clase de titulares del sistema anterior */
+.dsp{font-family:Manrope,sans-serif;letter-spacing:-.03em}
 
-/* Iconos Material Symbols */
-.mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;
-    letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;
-    word-wrap:normal;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';
-    -webkit-font-smoothing:antialiased;flex:none}
-.mi-fill{font-variation-settings:'FILL' 1}
+/* Las cifras van en mono, como en el panel de Turapp */
+.num{font-family:'IBM Plex Mono',monospace;letter-spacing:-.035em}
 
-button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;
-       position:relative;overflow:hidden;transition:box-shadow .2s var(--ease),background .2s var(--ease),transform .12s var(--ease)}
-button::after{content:'';position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s var(--ease);pointer-events:none}
-button:hover::after{opacity:.07}
-button:active::after{opacity:.11}
-button:active{transform:scale(.985)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;transition:transform .16s cubic-bezier(.2,.8,.2,1),background .16s ease}
+button:active{transform:scale(.99)}
 button:disabled{opacity:.5;cursor:not-allowed}
-button:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
-
-input,textarea,select{font-family:inherit;color:inherit;background:none;border:0;outline:none}
-input::placeholder,textarea::placeholder{color:var(--on-surface-variant);opacity:.75}
-a{color:var(--primary);text-decoration:none}
+button:focus-visible{outline:2.5px solid var(--green);outline-offset:2px}
+input,textarea,select{font:inherit;color:inherit;background:none;border:0;outline:none}
+input::placeholder,textarea::placeholder{color:var(--mu)}
+a{color:var(--green);text-decoration:none}
 
 ::-webkit-scrollbar{width:0;height:0}
-.sc{scrollbar-width:none;-ms-overflow-style:none;overflow-y:auto}
-.hs{scrollbar-width:none;-ms-overflow-style:none;overflow-x:auto;overflow-y:hidden}
+.sb{scrollbar-width:none;-ms-overflow-style:none}
+.sb::-webkit-scrollbar{display:none;width:0;height:0}
 
-@keyframes dxUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@keyframes dxPop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+@keyframes trFade{from{opacity:0}to{opacity:1}}
+@keyframes trUp{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes trBar{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes trSpin{to{transform:rotate(360deg)}}
+@keyframes trBlink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes trPop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes dxSpin{to{transform:rotate(360deg)}}
-@keyframes dxGlow{0%,100%{opacity:.45}50%{opacity:1}}
-@keyframes dxPulse{0%,100%{box-shadow:0 0 0 0 rgba(47,122,36,.36)}50%{box-shadow:0 0 0 12px rgba(47,122,36,0)}}
-@keyframes dxSheen{0%{background-position:-280px 0}100%{background-position:280px 0}}
 @keyframes dxFadeIn{from{opacity:0}to{opacity:1}}
-@keyframes dxSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes dxDrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
 @keyframes dxDrawer{from{transform:translateX(100%)}to{transform:none}}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+@keyframes dxPop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes dxUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes dxPulse{0%,100%{box-shadow:0 0 0 0 rgba(47,122,36,.4)}50%{box-shadow:0 0 0 12px rgba(47,122,36,0)}}
+@keyframes dxGlow{0%,100%{opacity:.45}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important}}
 
-/* ============================================================
-   Marco iPhone 17 Pro Max (440×956), escalado para caber en la
-   ventana. En celular real desaparece y va a pantalla completa.
-   ============================================================ */
-.dx-shell{position:relative;width:100%;min-height:100dvh;background:var(--surface);
-          display:flex;flex-direction:column;overflow:hidden}
+/* ---- Estructura del panel ---- */
+.dx-admin{display:flex;height:100dvh;width:100%;overflow:hidden}
 
-.dx-device{
-  position:relative;flex:none;overflow:hidden;background:var(--surface);
-  border-radius:58px;
-  box-shadow:
-    0 0 0 12px #1B1A18,
-    0 0 0 13.5px #6A645B,
-    0 0 0 15px #131211,
-    0 46px 100px rgba(20,16,10,.4);
-}
-.dx-device .dx-shell{height:100%;min-height:0}
-
-.dx-island{
-  position:absolute;top:12px;left:50%;transform:translateX(-50%);
-  width:126px;height:36px;border-radius:99px;background:#050506;z-index:900;
-  display:flex;align-items:center;justify-content:flex-end;padding-right:12px;
-  box-shadow:0 1px 3px rgba(0,0,0,.5);
-}
-.dx-island::after{
-  content:'';width:9px;height:9px;border-radius:50%;background:#16161A;
-  box-shadow:inset 0 0 0 1.5px #0E0E11, inset 0 0 3px rgba(60,90,160,.55);
-}
-.dx-status{
-  position:absolute;top:0;left:0;right:0;height:58px;z-index:850;
-  display:flex;align-items:flex-end;justify-content:space-between;
-  padding:0 34px 8px;pointer-events:none;
-  /* La mezcla por diferencia mantiene la hora legible sobre cualquier fondo. */
-  color:#fff;mix-blend-mode:difference;
-}
-.dx-screen{position:absolute;inset:0;padding-top:58px;padding-bottom:8px;display:flex;flex-direction:column;overflow:hidden}
-.dx-screen > *{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;overflow:hidden}
-.dx-homebar{
-  position:absolute;left:50%;bottom:9px;transform:translateX(-50%);
-  width:144px;height:5px;border-radius:99px;background:rgba(20,16,10,.4);z-index:900;pointer-events:none;
+.dx-sidebar{
+  flex:none;width:236px;background:var(--side);color:#fff;
+  display:flex;flex-direction:column;padding:18px 12px 14px;height:100dvh;
 }
 
-@media (min-width:640px){
-  body{display:flex;align-items:flex-start;justify-content:center;
-       background:radial-gradient(120% 90% at 50% 0%,#F2F0EC,#DCD9D3)}
-  :root[data-theme="dark"] body{background:radial-gradient(120% 90% at 50% 0%,#1C1915,#080706)}
+.dx-main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--sf)}
+.dx-content{flex:1;overflow-y:auto;padding:22px}
+
+.dx-navitem{
+  display:flex;align-items:center;gap:11px;width:100%;height:40px;padding:0 11px;
+  border-radius:10px;text-align:left;font:600 13px Manrope,sans-serif;
+  color:rgba(255,255,255,.62);background:transparent;
+  transition:background .15s ease,color .15s ease;
 }
-@media (max-width:639px){
-  .dx-shell--bare{height:100dvh}
+.dx-navitem:hover{background:rgba(255,255,255,.07);color:#fff}
+.dx-navitem[data-active="true"]{background:rgba(255,255,255,.12);color:#fff;font-weight:700}
+
+/* Tarjeta base del panel */
+.dx-card{border-radius:14px;background:var(--bg);border:1px solid var(--bd2);padding:18px}
+
+.dx-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.dx-table th{
+  text-align:left;font:600 10.5px Manrope,sans-serif;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--mu);padding:0 14px 11px;white-space:nowrap;
+}
+.dx-table td{padding:12px 14px;border-top:1px solid var(--bd2);vertical-align:middle}
+.dx-table tbody tr:hover{background:var(--sf)}
+
+@media (max-width:980px){
+  .dx-sidebar{display:none}
+  .dx-content{padding:16px}
 }

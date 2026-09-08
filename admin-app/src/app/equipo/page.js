@@ -31,6 +31,8 @@ export default function EquipoPage() {
     <>
       <TopBar title="Seguridad y equipo" subtitle="Quién entra al panel, cómo se ve y qué alertas recibe" />
 
+      <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16, alignItems: 'start' }}>
         <Card style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -145,6 +147,7 @@ export default function EquipoPage() {
             </div>
           </Card>
         </div>
+      </div>
       </div>
     </>
   );
