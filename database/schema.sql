@@ -1,17 +1,27 @@
 -- ============================================================
 -- Domix - Mensajería & Logística — Esquema de base de datos
--- Adaptado del esquema de Turapp (Supabase + PostGIS + RLS)
+-- Adaptado del esquema de Turapp (Supabase + PostGIS)
+--
+-- ⚠️ MODO SIN LOGIN (temporal, a pedido explícito para no complicar
+-- el arranque): ninguna tabla depende de Supabase Auth. Las políticas
+-- de abajo son PERMISIVAS (cualquiera con la anon key puede leer/escribir),
+-- porque la app no tiene forma de saber "quién eres" todavía.
+-- Antes de manejar pagos reales o abrir la app de cliente al público hay
+-- que: (a) agregar autenticación real (SMS OTP, PIN, o lo que se decida),
+-- y (b) reemplazar estas políticas por las que ya quedaron comentadas
+-- como referencia, basadas en auth.uid().
 -- ============================================================
 
 create extension if not exists postgis;
 create extension if not exists "uuid-ossp";
 
 -- ------------------------------------------------------------
--- 1. Perfiles (clientes, repartidores y staff de Domix)
+-- 1. Perfiles (repartidores y staff de Domix)
+--    Nota: ya NO referencia auth.users — no depende de Supabase Auth.
 -- ------------------------------------------------------------
 create table if not exists public.profiles (
-    id uuid references auth.users(id) primary key,
-    phone_number text unique not null,
+    id uuid default uuid_generate_v4() primary key,
+    phone_number text unique,
     first_name text,
     last_name text,
     avatar_url text,
@@ -22,17 +32,10 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
-create policy "Los perfiles son visibles para todos"
-    on public.profiles for select
-    using ( true );
-
-create policy "Un usuario crea su propio perfil"
-    on public.profiles for insert
-    with check ( auth.uid() = id );
-
-create policy "Un usuario actualiza su propio perfil"
-    on public.profiles for update
-    using ( auth.uid() = id );
+create policy "Acceso abierto a perfiles (sin login, temporal)"
+    on public.profiles for all
+    using ( true )
+    with check ( true );
 
 -- ------------------------------------------------------------
 -- 2. Perfil de repartidor (equivalente a driver_profiles)
@@ -55,13 +58,10 @@ create index if not exists courier_location_idx on public.courier_profiles using
 
 alter table public.courier_profiles enable row level security;
 
-create policy "Perfiles de repartidor visibles para todos"
-    on public.courier_profiles for select
-    using ( true );
-
-create policy "Un repartidor actualiza su propio estado/ubicacion"
-    on public.courier_profiles for update
-    using ( auth.uid() = id );
+create policy "Acceso abierto a perfiles de repartidor (sin login, temporal)"
+    on public.courier_profiles for all
+    using ( true )
+    with check ( true );
 
 -- ------------------------------------------------------------
 -- 3. Vehículo del repartidor
@@ -78,9 +78,10 @@ create table if not exists public.vehicles (
 
 alter table public.vehicles enable row level security;
 
-create policy "Vehiculos visibles para todos"
-    on public.vehicles for select
-    using ( true );
+create policy "Acceso abierto a vehiculos (sin login, temporal)"
+    on public.vehicles for all
+    using ( true )
+    with check ( true );
 
 -- ------------------------------------------------------------
 -- 4. Documentos del repartidor (cédula, licencia, SOAT, tarjeta de propiedad)
@@ -98,13 +99,10 @@ create table if not exists public.courier_documents (
 
 alter table public.courier_documents enable row level security;
 
-create policy "Un repartidor ve y edita sus propios documentos"
+create policy "Acceso abierto a documentos (sin login, temporal)"
     on public.courier_documents for all
-    using ( auth.uid() = courier_id );
-
-create policy "El admin ve todos los documentos"
-    on public.courier_documents for select
-    using ( exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
+    using ( true )
+    with check ( true );
 
 -- ------------------------------------------------------------
 -- 5. Solicitudes de servicio (mensajería, encomienda, domicilio,
@@ -122,8 +120,8 @@ create table if not exists public.service_requests (
     dropoff_location geometry(Point, 4326),
     contact_name text,
     contact_phone text,
-    -- Los clientes piden como invitados (sin cuenta ni login). tracking_code
-    -- es lo único que necesitan para consultar el estado de su pedido después.
+    -- El cliente pide como invitado (sin cuenta). tracking_code es lo único
+    -- que necesita para consultar el estado de su pedido después.
     tracking_code text unique default substr(md5(random()::text || clock_timestamp()::text), 1, 8),
     price decimal(10,2) not null default 6000,
     max_budget decimal(10,2),
@@ -143,25 +141,30 @@ create index if not exists service_requests_tracking_idx on public.service_reque
 
 alter table public.service_requests enable row level security;
 
--- El cliente pide sin cuenta: solo necesita contact_phone/contact_name.
--- client_id queda null en ese caso (se llena solo si en el futuro hay cuentas).
-create policy "Repartidores, admin y dueno de cuenta ven las solicitudes"
-    on public.service_requests for select
-    using ( auth.uid() = courier_id
-            or (client_id is not null and auth.uid() = client_id)
-            or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
+create policy "Acceso abierto a solicitudes (sin login, temporal)"
+    on public.service_requests for all
+    using ( true )
+    with check ( true );
 
-create policy "Cualquiera (con o sin cuenta) crea una solicitud"
-    on public.service_requests for insert
-    with check ( client_id is null or auth.uid() = client_id );
+-- Referencia para cuando se agregue autenticación real (NO está activa):
+--
+-- create policy "Repartidores, admin y dueno de cuenta ven las solicitudes"
+--     on public.service_requests for select
+--     using ( auth.uid() = courier_id
+--             or (client_id is not null and auth.uid() = client_id)
+--             or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
+--
+-- create policy "Cualquiera (con o sin cuenta) crea una solicitud"
+--     on public.service_requests for insert
+--     with check ( client_id is null or auth.uid() = client_id );
+--
+-- create policy "Repartidor y admin actualizan la solicitud"
+--     on public.service_requests for update
+--     using ( auth.uid() = courier_id
+--             or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
 
-create policy "Repartidor y admin actualizan la solicitud"
-    on public.service_requests for update
-    using ( auth.uid() = courier_id
-            or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
-
--- Consulta pública de estado por código de seguimiento, sin exponer la tabla
--- completa via RLS abierta (evita que cualquiera liste todos los pedidos).
+-- Función de consulta pública de estado por código de seguimiento (útil ya
+-- desde ahora para un link tipo "sigue tu pedido" sin exponer toda la tabla).
 create or replace function public.track_service_request(p_tracking_code text)
 returns table (
     id uuid,
@@ -192,27 +195,10 @@ create table if not exists public.payouts (
 
 alter table public.payouts enable row level security;
 
-create policy "Un repartidor ve sus propios pagos"
-    on public.payouts for select
-    using ( auth.uid() = courier_id
-            or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') );
-
--- ------------------------------------------------------------
--- Trigger: crear perfil automáticamente al registrarse
--- ------------------------------------------------------------
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, phone_number, first_name)
-  values (new.id, new.phone, 'Usuario Nuevo');
-  return new;
-end;
-$$ language plpgsql security definer;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+create policy "Acceso abierto a pagos (sin login, temporal)"
+    on public.payouts for all
+    using ( true )
+    with check ( true );
 
 -- ------------------------------------------------------------
 -- Función: pedidos disponibles cerca de un repartidor (radio en metros)

@@ -3,67 +3,72 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
+const STORAGE_KEY = 'domix_courier_id';
 const CourierSessionContext = createContext(null);
 
 export function CourierSessionProvider({ children }) {
-  const [session, setSession] = useState(undefined); // undefined = cargando, null = sin sesion
+  const [courierId, setCourierId] = useState(undefined); // undefined = cargando, null = sin elegir
   const [profile, setProfile] = useState(null);
   const [courierProfile, setCourierProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadCourierData = useCallback(async (userId) => {
+  const loadCourierData = useCallback(async (id) => {
     const [{ data: profileData }, { data: courierData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-      supabase.from('courier_profiles').select('*').eq('id', userId).maybeSingle(),
+      supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+      supabase.from('courier_profiles').select('*').eq('id', id).maybeSingle(),
     ]);
     setProfile(profileData || null);
     setCourierProfile(courierData || null);
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      if (data.session?.user?.id) loadCourierData(data.session.user.id);
-      else setLoading(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      if (newSession?.user?.id) loadCourierData(newSession.user.id);
-      else {
-        setProfile(null);
-        setCourierProfile(null);
-      }
-    });
-
-    return () => sub.subscription.unsubscribe();
+    const storedId = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    setCourierId(storedId || null);
+    if (storedId) loadCourierData(storedId).finally(() => setLoading(false));
+    else setLoading(false);
   }, [loadCourierData]);
 
-  useEffect(() => {
-    if (profile !== null || courierProfile !== null) setLoading(false);
-    else if (session === null) setLoading(false);
-  }, [profile, courierProfile, session]);
+  const selectCourier = useCallback(async (id) => {
+    localStorage.setItem(STORAGE_KEY, id);
+    setCourierId(id);
+    setLoading(true);
+    await loadCourierData(id);
+    setLoading(false);
+  }, [loadCourierData]);
 
   const setOnlineStatus = useCallback(async (isOnline) => {
-    if (!session?.user?.id) return;
+    if (!courierId) return;
     const status = isOnline ? 'online' : 'offline';
     const { data, error } = await supabase
       .from('courier_profiles')
       .update({ status })
-      .eq('id', session.user.id)
+      .eq('id', courierId)
       .select()
       .maybeSingle();
     if (!error && data) setCourierProfile(data);
     return { data, error };
-  }, [session]);
+  }, [courierId]);
 
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+  const signOut = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCourierId(null);
+    setProfile(null);
+    setCourierProfile(null);
   }, []);
 
   return (
     <CourierSessionContext.Provider
-      value={{ session, profile, courierProfile, loading, setOnlineStatus, signOut, reload: () => session?.user?.id && loadCourierData(session.user.id) }}
+      value={{
+        courierId,
+        session: courierId ? { user: { id: courierId } } : courierId === null ? null : undefined,
+        profile,
+        courierProfile,
+        loading,
+        selectCourier,
+        setOnlineStatus,
+        signOut,
+        reload: () => courierId && loadCourierData(courierId),
+      }}
     >
       {children}
     </CourierSessionContext.Provider>
