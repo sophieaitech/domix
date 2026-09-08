@@ -84,10 +84,11 @@ export async function fetchWeekEarnings(courierId) {
   start.setHours(0, 0, 0, 0);
   const { data, error } = await supabase
     .from('service_requests')
-    .select('price, tip, delivered_at')
+    .select('id, service_type, price, tip, delivered_at')
     .eq('courier_id', courierId)
     .eq('status', 'delivered')
-    .gte('delivered_at', start.toISOString());
+    .gte('delivered_at', start.toISOString())
+    .order('delivered_at', { ascending: false });
   if (error) throw error;
   return data || [];
 }

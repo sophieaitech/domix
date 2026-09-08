@@ -14,8 +14,8 @@ export default function RequireSession({ children }) {
 
   if (loading || !session) {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ font: '600 13px Manrope,sans-serif', color: 'var(--mu)' }}>Cargando…</span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 42, height: 42, borderRadius: '50%', border: '3px solid var(--surface2)', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }

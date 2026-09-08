@@ -1,36 +1,37 @@
-/* Domix Repartidor — design tokens, resets. Layout vive inline en cada pantalla. */
-.dx-app{
-  --bg:#f7f8fa; --sf:#ffffff; --sf2:#eef0f3; --bd:rgba(10,20,40,.10); --bd2:rgba(10,20,40,.06);
-  --tx:#0c1524; --mu:#6b7280; --inv:#0c1524; --invtx:#ffffff;
-  --navy:#10233f; --navyS:#e8ecf3;
-  --green:#1f9d55; --greenS:#e5f6ec;
-  --pink:#e31577; --pinkS:#fde7f0;
-  --amber:#c98a1e; --amberS:#faf0dd;
-  --red:#c8402f; --redS:#fbeceb;
-  --sh:0 10px 34px rgba(10,20,40,.12); --sh2:0 2px 10px rgba(10,20,40,.06);
-  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+/* Domix Repartidor — sistema de diseño tomado del mockup Tura Repartidor,
+   con la paleta de marca de Domix (azul marino, verde y naranja del logo). */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  --backdrop:#E7E5E1;--bg:#F6F5F2;--surface:#FFFFFF;--surface2:#F0EEE9;
+  --text:#17140F;--muted:#8C857B;--faint:#B6AFA4;--border:rgba(20,16,10,.09);
+  --navy:#14294A;--navyDark:#0C1A31;--navySoft:#E9EDF4;
+  --primary:#F58220;--primaryDark:#D96D12;
+  --green:#57A639;--greenDark:#3E8526;--greenSoft:#EAF4E4;
+  --amber:#FFB020;--blue:#2E6BFF;--red:#D9452F;--redSoft:#FBEDEA;
+  --shadow:0 14px 40px rgba(20,16,10,.10);--shadowSm:0 3px 14px rgba(20,16,10,.07);
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text);background:var(--backdrop);
+  -webkit-font-smoothing:antialiased;
 }
-.dx-app[data-theme="dark"]{
-  --bg:#0a0e16; --sf:#141a24; --sf2:#1c2330; --bd:rgba(255,255,255,.12); --bd2:rgba(255,255,255,.06);
-  --tx:#f4f6f9; --mu:#9aa3b2; --inv:#ffffff; --invtx:#0a0e16;
-  --navy:#1a3560; --navyS:#152238;
-  --green:#33c37a; --greenS:#0f241a;
-  --pink:#f04a9a; --pinkS:#2a1420;
-  --amber:#e9b45f; --amberS:#241c0e;
-  --red:#f0705e; --redS:#2a1512;
-  --sh:0 10px 34px rgba(0,0,0,.6); --sh2:0 2px 10px rgba(0,0,0,.4);
-}
-.dx-app, .dx-app *{box-sizing:border-box; margin:0; padding:0;}
-.dx-app{width:100%; min-height:100dvh; font-family:Manrope,-apple-system,'Helvetica Neue',Helvetica,sans-serif; letter-spacing:-0.01em;}
-.dx-app button{font:inherit; color:inherit; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .2s cubic-bezier(.2,.8,.2,1), background .2s ease, opacity .2s ease;}
-.dx-app button:active{transform:scale(.97); opacity:.92;}
-.dx-app input{font:inherit; color:inherit; background:none; border:0; outline:none;}
-.dx-sb{scrollbar-width:none; -ms-overflow-style:none; -webkit-overflow-scrolling:touch;}
-.dx-sb::-webkit-scrollbar{display:none; width:0; height:0;}
-@keyframes dxSpin{to{transform:rotate(360deg)}}
-@keyframes dxFade{from{opacity:0}to{opacity:1}}
-@keyframes dxUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-@media (prefers-reduced-motion:reduce){.dx-app *{animation-duration:.01ms !important;animation-iteration-count:1 !important}}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;transition:transform .18s ease,opacity .18s ease}
+button:active{transform:scale(.97);opacity:.92}
+input,textarea,select{font-family:inherit;color:inherit;background:none;border:0;outline:none}
+::-webkit-scrollbar{width:0;height:0}
+.sc{scrollbar-width:none;-ms-overflow-style:none;overflow-y:auto}
+.mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr}
+.mi-fill{font-variation-settings:'FILL' 1}
+.dsp{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,130,32,.45)}50%{box-shadow:0 0 0 12px rgba(245,130,32,0)}}
+@keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important}}
 
-html{height:100%;}
-body{margin:0; min-height:100dvh; background:#0a0e16;}
+/* La app ocupa toda la pantalla en móvil; en escritorio se centra con ancho
+   de teléfono para que se vea como la app real. */
+.dx-shell{position:relative;width:100%;min-height:100dvh;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:600px){
+  body{display:flex;align-items:flex-start;justify-content:center;background:radial-gradient(120% 90% at 50% 0%,#F2F0EC,#DCD9D3)}
+  .dx-shell{width:440px;height:940px;margin:24px 0;border-radius:44px;box-shadow:0 0 0 11px #1C1C1F,0 0 0 12.5px #6E6D74,0 0 0 14px #2A2A2E,0 40px 90px rgba(0,0,0,.4)}
+}
