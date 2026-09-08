@@ -57,7 +57,7 @@ function GananciasContent() {
       <div className="dx-page sc">
         <HeroCard glow="green">
           <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Disponible para retirar</Overline>
-          <div className="dsp" style={{ fontWeight: 800, fontSize: 40, letterSpacing: '-.035em', marginTop: 6 }}>{money(total)}</div>
+          <div className="num" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', marginTop: 6 }}>{money(total)}</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>
             {courierProfile?.payout_account ? `Se consigna a ${courierProfile.payout_account}` : 'Registra tu cuenta de retiro en Cuenta'}
           </div>
@@ -68,7 +68,7 @@ function GananciasContent() {
               return (
                 <span key={b.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
                   {b.total > 0 && (
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: 'rgba(255,255,255,.75)' }}>
+                    <span className="num" style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,.75)' }}>
                       {Math.round(b.total / 1000)}k
                     </span>
                   )}
@@ -110,7 +110,7 @@ function GananciasContent() {
                     {new Date(r.delivered_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} · {new Date(r.delivered_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
                   </span>
                 </span>
-                <span className="dsp" style={{ fontWeight: 800, fontSize: 16, color: 'var(--secondary)' }}>
+                <span className="num" style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)' }}>
                   +{money(Number(r.price || 0) + Number(r.tip || 0))}
                 </span>
               </div>

@@ -124,8 +124,11 @@ body{
   text-rendering:optimizeLegibility;
 }
 
-/* Tipografía de display: cifras y titulares */
+/* Tipografía de display: titulares */
 .dsp{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em}
+
+/* Cifras en mono: se alinean en columna y se leen mejor de un vistazo */
+.num{font-family:'IBM Plex Mono',monospace;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 
 /* Iconos Material Symbols */
 .mi{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;

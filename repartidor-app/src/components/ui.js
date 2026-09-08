@@ -120,8 +120,8 @@ export function Switch({ checked, onChange, disabled }) {
       aria-checked={checked}
       style={{
         width: 52, height: 32, borderRadius: 'var(--sh-full)', padding: 3, display: 'flex', flex: 'none',
-        background: checked ? 'var(--secondary)' : 'rgba(255,255,255,.22)',
-        border: checked ? '2px solid var(--secondary)' : '2px solid rgba(255,255,255,.34)',
+        background: checked ? 'var(--primary)' : 'rgba(255,255,255,.22)',
+        border: checked ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,.34)',
       }}
     >
       <span
@@ -132,7 +132,7 @@ export function Switch({ checked, onChange, disabled }) {
           transform: checked ? 'translateX(20px)' : 'translateX(0)',
         }}
       >
-        {checked && <Icon name="check" size={14} color="var(--secondary)" style={{ fontWeight: 700 }} />}
+        {checked && <Icon name="check" size={14} color="var(--primary)" style={{ fontWeight: 700 }} />}
       </span>
     </button>
   );

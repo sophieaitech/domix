@@ -122,11 +122,11 @@ function EntregasContent() {
                 </span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontWeight: 700, fontSize: 14.5 }}>{serviceLabel(req.service_type)}</span>
-                  <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
+                  <span className="num" style={{ display: 'block', fontSize: 11, color: 'var(--on-surface-variant)', marginTop: 2 }}>
                     #{req.tracking_code} · {new Date(req.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                   </span>
                 </span>
-                <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>{money(req.price)}</span>
+                <span className="num" style={{ fontWeight: 800, fontSize: 17 }}>{money(req.price)}</span>
               </div>
 
               <div style={{ marginTop: 13, paddingTop: 13, borderTop: '1px solid var(--outline-variant)' }}>

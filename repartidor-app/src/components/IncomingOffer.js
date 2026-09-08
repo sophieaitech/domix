@@ -52,7 +52,7 @@ export default function IncomingOffer({ request, onAccept, onDismiss }) {
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#fff', animation: 'dxGlow 1s infinite' }} />
             {request.turbo ? 'DOMIX TURBO · PRIORITARIO' : 'NUEVO PEDIDO'}
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 800 }}>
+          <span className="num" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
             <Icon name="timer" size={17} fill />
             {left}s
           </span>
@@ -63,7 +63,7 @@ export default function IncomingOffer({ request, onAccept, onDismiss }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 16 }}>
-          <span className="dsp" style={{ fontWeight: 800, fontSize: 44, letterSpacing: '-.035em' }}>{money(total)}</span>
+          <span className="num" style={{ fontWeight: 800, fontSize: 42, letterSpacing: '-.03em' }}>{money(total)}</span>
           <span style={{ fontSize: 13, fontWeight: 700, opacity: .8 }}>{km.toFixed(1)} km · {eta} min</span>
         </div>
         {Number(request.tip) > 0 && (

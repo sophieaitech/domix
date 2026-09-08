@@ -6,7 +6,6 @@ import BottomNav from '../../components/BottomNav';
 import IncomingOffer from '../../components/IncomingOffer';
 import MapView from '../../components/MapView';
 import ModeSwitch from '../../components/ModeSwitch';
-import ThemeToggle from '../../components/ThemeToggle';
 import { Icon, Card, HeroCard, Overline, Button, Chip, StatTile, EmptyState, Spinner, Switch } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
@@ -118,16 +117,18 @@ function HomeContent() {
           {inits}
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="dsp" style={{ fontWeight: 700, fontSize: 17 }}>Hola, {profile?.first_name || 'Repartidor'}</div>
+          <div className="dsp" style={{ fontWeight: 700, fontSize: 17, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            Hola, {profile?.first_name || 'Repartidor'}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--on-surface-variant)', fontWeight: 600, marginTop: 1 }}>
             <Icon name="star" size={13} fill color="var(--tertiary)" />
-            {Number(courierProfile?.rating || 5).toFixed(1)}
+            <span className="num">{Number(courierProfile?.rating || 5).toFixed(1)}</span>
             <span style={{ opacity: .5 }}>·</span>
+            <Icon name="location_on" size={13} fill color="var(--primary)" />
             {courierProfile?.work_zone || 'Centro'}
           </div>
         </div>
-        <ThemeToggle compact />
-        <ModeSwitch compact />
+        <span style={{ flex: 'none' }}><ModeSwitch compact /></span>
       </header>
 
       <div className="dx-page sc">
@@ -139,7 +140,7 @@ function HomeContent() {
             </Chip>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 6 }}>
-            <span className="dsp" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.035em' }}>{money(earnings)}</span>
+            <span className="num" style={{ fontWeight: 800, fontSize: 36, letterSpacing: '-.03em' }}>{money(earnings)}</span>
             {deliveredToday.length > 0 && <span style={{ fontSize: 12.5, fontWeight: 800, color: '#A9D98F' }}>{deliveredToday.length} hoy</span>}
           </div>
 
@@ -154,6 +155,20 @@ function HomeContent() {
               </span>
             </span>
             <Switch checked={isOnline} onChange={toggle} disabled={toggling} />
+          </div>
+
+          {/* Resumen del turno, en la misma tarjeta */}
+          <div style={{ display: 'flex', marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.13)' }}>
+            {[
+              { l: 'Entregas hoy', v: deliveredToday.length },
+              { l: 'Calificación', v: Number(courierProfile?.rating || 5).toFixed(1) },
+              { l: 'En curso', v: active.length },
+            ].map((s, i) => (
+              <span key={s.l} style={{ flex: 1, paddingLeft: i ? 14 : 0, borderLeft: i ? '1px solid rgba(255,255,255,.13)' : 'none' }}>
+                <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,.55)' }}>{s.l}</span>
+                <span className="num" style={{ display: 'block', fontSize: 16, fontWeight: 700, marginTop: 3 }}>{s.v}</span>
+              </span>
+            ))}
           </div>
         </HeroCard>
 
@@ -206,7 +221,7 @@ function HomeContent() {
                     {current.status === 'assigned' ? current.pickup_address : current.dropoff_address}
                   </span>
                 </span>
-                <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>{money(current.price)}</span>
+                <span className="num" style={{ fontWeight: 800, fontSize: 18 }}>{money(current.price)}</span>
               </div>
 
               {current.contact_phone && (

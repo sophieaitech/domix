@@ -6,6 +6,7 @@ import BottomNav from '../../components/BottomNav';
 import { Icon, Card, HeroCard, Overline, Button, Chip } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
+import { useTheme } from '../../context/ThemeProvider';
 import ModeSwitch from '../../components/ModeSwitch';
 import ThemeToggle from '../../components/ThemeToggle';
 import { DEMO_DOCS, DEMO_VEHICLE } from '../../lib/demo';
@@ -30,6 +31,7 @@ const VEHICLES = { moto: 'Moto', bicicleta: 'Bicicleta', a_pie: 'A pie', carro: 
 function CuentaContent() {
   const { profile, courierProfile, signOut } = useCourierSession();
   const { isDemo } = useAppMode();
+  const { theme, changeTheme } = useTheme();
   const [docs, setDocs] = useState([]);
   const [vehicle, setVehicle] = useState(null);
 
@@ -83,7 +85,7 @@ function CuentaContent() {
               { v: `${approved}/4`, l: 'Documentos' },
             ].map((s) => (
               <span key={s.l} style={{ flex: 1, background: 'rgba(255,255,255,.09)', borderRadius: 'var(--sh-sm)', padding: '11px 8px', textAlign: 'center' }}>
-                <span className="dsp" style={{ display: 'block', fontWeight: 800, fontSize: 18 }}>{s.v}</span>
+                <span className="num" style={{ display: 'block', fontWeight: 700, fontSize: 17 }}>{s.v}</span>
                 <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,.55)', marginTop: 2 }}>{s.l}</span>
               </span>
             ))}
@@ -134,6 +136,35 @@ function CuentaContent() {
               <Icon name="chevron_right" size={20} color="var(--outline)" />
             </button>
           ))}
+        </Card>
+
+        {/* Apariencia */}
+        <Card style={{ padding: 16, marginTop: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Apariencia</div>
+          <div style={{ display: 'flex', gap: 9 }}>
+            {[
+              { id: 'light', label: 'Claro', icon: 'light_mode' },
+              { id: 'dark', label: 'Oscuro', icon: 'dark_mode' },
+              { id: 'auto', label: 'Auto', icon: 'brightness_auto' },
+            ].map((t) => {
+              const on = theme === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => changeTheme(t.id)}
+                  style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '14px 8px',
+                    borderRadius: 'var(--sh-md)', fontSize: 12.5, fontWeight: 800,
+                    background: on ? 'var(--primary)' : 'var(--surface-container)',
+                    color: on ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                  }}
+                >
+                  <Icon name={t.icon} size={20} fill={on} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </Card>
 
         <Button full variant="outlined" icon="swap_horiz" color="var(--error)" onClick={signOut} style={{ marginTop: 14, borderColor: 'var(--outline-variant)' }}>
