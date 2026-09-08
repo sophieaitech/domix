@@ -43,7 +43,7 @@ export default function Sidebar() {
   return (
     <aside className="dx-sidebar">
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '0 8px 20px' }}>
-        <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: 'linear-gradient(150deg,#57A82F,#43922B)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 4px 14px rgba(67,146,43,.34)' }}>
+        <span style={{ width: 42, height: 42, borderRadius: 'var(--sh-sm)', background: 'linear-gradient(150deg,#3E9330,#2F7A24)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 4px 14px rgba(47,122,36,.3)' }}>
           <Icon name="two_wheeler" size={23} fill color="#fff" />
         </span>
         <span style={{ minWidth: 0 }}>

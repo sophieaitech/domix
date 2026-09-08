@@ -117,7 +117,7 @@ export default function DespachoPage() {
                     style={{
                       height: 44, padding: '0 16px', borderRadius: 'var(--sh-sm)', fontSize: 13, fontWeight: 800,
                       display: 'flex', alignItems: 'center', gap: 7,
-                      background: on ? 'linear-gradient(135deg,#57A82F,#43922B)' : 'var(--surface-container)',
+                      background: on ? 'linear-gradient(135deg,#3E9330,#2F7A24)' : 'var(--surface-container)',
                       color: on ? '#fff' : 'var(--on-surface-variant)',
                       boxShadow: on ? 'var(--elev-2)' : 'none',
                     }}
@@ -207,7 +207,7 @@ export default function DespachoPage() {
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 9, marginTop: 12, padding: '11px 13px',
               borderRadius: 'var(--sh-sm)', fontSize: 12.5, fontWeight: 800,
-              background: sim.turbo ? 'linear-gradient(135deg,#57A82F,#43922B)' : 'var(--surface-container)',
+              background: sim.turbo ? 'linear-gradient(135deg,#3E9330,#2F7A24)' : 'var(--surface-container)',
               color: sim.turbo ? '#fff' : 'var(--on-surface-variant)',
             }}
           >

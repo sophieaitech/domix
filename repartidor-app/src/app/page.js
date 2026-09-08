@@ -49,7 +49,7 @@ export default function ChooseCourierPage() {
       <div style={{ position: 'absolute', left: -90, bottom: -70, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(27,79,143,.22),transparent 70%)' }} />
 
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, paddingTop: 26 }}>
-        <span style={{ width: 46, height: 46, borderRadius: 'var(--sh-md)', background: 'linear-gradient(150deg,#57A82F,#43922B)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 6px 18px rgba(67,146,43,.4)' }}>
+        <span style={{ width: 46, height: 46, borderRadius: 'var(--sh-md)', background: 'linear-gradient(150deg,#3E9330,#2F7A24)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', boxShadow: '0 6px 18px rgba(47,122,36,.36)' }}>
           <Icon name="two_wheeler" size={25} fill color="#fff" />
         </span>
         <span style={{ flex: 1 }}>

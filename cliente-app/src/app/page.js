@@ -99,7 +99,7 @@ export default function InicioPage() {
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 13, marginTop: 12, padding: 15,
             borderRadius: 'var(--sh-lg)', textAlign: 'left', color: '#fff',
-            background: 'linear-gradient(135deg,#57A82F 0%,#43922B 48%,#2F6B1C 100%)',
+            background: 'linear-gradient(135deg,#2E7BC4 0%,#1B4F8F 46%,#123B6B 100%)',
             boxShadow: '0 10px 26px rgba(27,79,143,.3)',
           }}
         >

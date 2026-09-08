@@ -74,7 +74,7 @@ function GananciasContent() {
                   )}
                   <span style={{
                     width: '100%', height: Math.max(5, (b.total / max) * 48), borderRadius: '5px 5px 3px 3px',
-                    background: isToday ? 'linear-gradient(180deg,#6DBF3F,#43922B)' : 'rgba(255,255,255,.18)',
+                    background: isToday ? 'linear-gradient(180deg,#4EA33C,#2F7A24)' : 'rgba(255,255,255,.18)',
                     transition: 'height .4s var(--ease-out)',
                   }} />
                   <span style={{ fontSize: 10, fontWeight: 700, color: isToday ? '#A9D98F' : 'rgba(255,255,255,.5)' }}>{b.label}</span>

@@ -7,13 +7,13 @@
 
 :root{
   /* --- Identidad de marca (del logo Domix) --- */
-  --dx-green:#43922B;   --dx-green-dark:#35761F;  --dx-green-soft:#E8F1E2;
+  --dx-green:#2F7A24;   --dx-green-dark:#35761F;  --dx-green-soft:#E8F1E2;
   --dx-navy:#1B4F8F;    --dx-navy-dark:#123B6B;   --dx-navy-soft:#E5EBF3;
   --dx-ink:#17140F;     --dx-ink-2:#241F1A;       --dx-ink-3:#12100D;
 
   /* --- Roles de color --- */
-  --primary:#43922B;              --on-primary:#FFFFFF;
-  --primary-container:#E8F1E2;    --on-primary-container:#204A11;
+  --primary:#2F7A24;              --on-primary:#FFFFFF;
+  --primary-container:#E4EFDE;    --on-primary-container:#1D460F;
   --secondary:#1B4F8F;            --on-secondary:#FFFFFF;
   --secondary-container:#E5EBF3;  --on-secondary-container:#123B6B;
   --tertiary:#B8801C;             --on-tertiary:#FFFFFF;
@@ -155,7 +155,7 @@ a{color:var(--primary);text-decoration:none}
 @keyframes dxPop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
 @keyframes dxSpin{to{transform:rotate(360deg)}}
 @keyframes dxGlow{0%,100%{opacity:.45}50%{opacity:1}}
-@keyframes dxPulse{0%,100%{box-shadow:0 0 0 0 rgba(67,146,43,.38)}50%{box-shadow:0 0 0 12px rgba(67,146,43,0)}}
+@keyframes dxPulse{0%,100%{box-shadow:0 0 0 0 rgba(47,122,36,.36)}50%{box-shadow:0 0 0 12px rgba(47,122,36,0)}}
 @keyframes dxSheen{0%{background-position:-280px 0}100%{background-position:280px 0}}
 @keyframes dxFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes dxSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}

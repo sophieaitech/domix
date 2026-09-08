@@ -105,7 +105,7 @@ export default function PanelPage() {
                   {b.total > 0 && <span style={{ fontSize: 10.5, fontWeight: 800, color: 'rgba(255,255,255,.8)' }}>{Math.round(b.total / 1000)}k</span>}
                   <span style={{
                     width: '100%', height: Math.max(6, (b.total / maxSemana) * 72), borderRadius: '6px 6px 3px 3px',
-                    background: isToday ? 'linear-gradient(180deg,#6DBF3F,#43922B)' : 'rgba(255,255,255,.18)',
+                    background: isToday ? 'linear-gradient(180deg,#4EA33C,#2F7A24)' : 'rgba(255,255,255,.18)',
                     transition: 'height .45s var(--ease-out)',
                   }} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: isToday ? '#A9D98F' : 'rgba(255,255,255,.5)' }}>{b.label}</span>
@@ -173,7 +173,7 @@ export default function PanelPage() {
                 <span className="dsp" style={{ fontSize: 13, fontWeight: 800 }}>{s.count}</span>
               </div>
               <div style={{ height: 7, borderRadius: 99, background: 'var(--surface-container)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${(s.count / maxServicio) * 100}%`, borderRadius: 99, background: 'linear-gradient(90deg,#57A82F,#43922B)', transition: 'width .5s var(--ease-out)' }} />
+                <div style={{ height: '100%', width: `${(s.count / maxServicio) * 100}%`, borderRadius: 99, background: 'linear-gradient(90deg,#3E9330,#2F7A24)', transition: 'width .5s var(--ease-out)' }} />
               </div>
             </div>
           ))}

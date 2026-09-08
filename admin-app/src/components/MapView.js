@@ -59,6 +59,7 @@ export default function MapView({
   const nodeRef = useRef(null);
   const mapRef = useRef(null);
   const layersRef = useRef([]);
+  const observerRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,8 +77,22 @@ export default function MapView({
       L.tileLayer(TILES, { attribution: ATTR, maxZoom: 19 }).addTo(map);
       mapRef.current = map;
       draw();
+
+      // Leaflet mide el contenedor al crearse; si aún no tenía su tamaño
+      // final (animaciones, layouts flex), las teselas quedan corridas.
+      const fix = () => map.invalidateSize({ animate: false });
+      requestAnimationFrame(fix);
+      setTimeout(fix, 250);
+      const ro = new ResizeObserver(fix);
+      ro.observe(nodeRef.current);
+      observerRef.current = ro;
     }).catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      observerRef.current?.disconnect();
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -94,7 +109,7 @@ export default function MapView({
     if (route?.length > 1) {
       const latlngs = route.map((p) => [p.lat, p.lon]);
       add(L.polyline(latlngs, { color: '#17140F', weight: 5, opacity: .85, lineCap: 'round' }));
-      add(L.polyline(latlngs, { color: '#43922B', weight: 2, opacity: .9, dashArray: '1 10', lineCap: 'round' }));
+      add(L.polyline(latlngs, { color: '#2F7A24', weight: 2, opacity: .9, dashArray: '1 10', lineCap: 'round' }));
       latlngs.forEach((p) => bounds.push(p));
     }
 
@@ -103,7 +118,7 @@ export default function MapView({
       bounds.push([pickup.lat, pickup.lon]);
     }
     if (dropoff) {
-      add(L.marker([dropoff.lat, dropoff.lon], { icon: pinIcon(L, { color: '#43922B', icon: 'location_on' }) }));
+      add(L.marker([dropoff.lat, dropoff.lon], { icon: pinIcon(L, { color: '#2F7A24', icon: 'location_on' }) }));
       bounds.push([dropoff.lat, dropoff.lon]);
     }
     if (courier) {
@@ -113,14 +128,14 @@ export default function MapView({
     couriers.forEach((c) => {
       if (c.lat == null || c.lon == null) return;
       add(L.marker([c.lat, c.lon], {
-        icon: pinIcon(L, { color: c.status === 'online' ? '#43922B' : c.status === 'busy' ? '#1B4F8F' : '#B6AFA4', icon: 'two_wheeler' }),
+        icon: pinIcon(L, { color: c.status === 'online' ? '#2F7A24' : c.status === 'busy' ? '#1B4F8F' : '#B6AFA4', icon: 'two_wheeler' }),
       })).bindTooltip(c.name || 'Repartidor', { direction: 'top', offset: [0, -16] });
       bounds.push([c.lat, c.lon]);
     });
 
     if (radiusKm && center) {
       add(L.circle([center.lat, center.lon], {
-        radius: radiusKm * 1000, color: '#43922B', weight: 1.5, fillColor: '#43922B', fillOpacity: .07,
+        radius: radiusKm * 1000, color: '#2F7A24', weight: 1.5, fillColor: '#2F7A24', fillOpacity: .07,
       }));
     }
 
@@ -136,7 +151,11 @@ export default function MapView({
       ref={nodeRef}
       style={{
         height, width: '100%', borderRadius: 'var(--sh-lg)', overflow: 'hidden',
-        background: 'var(--surface-container)', border: '1px solid var(--outline-variant)', ...style,
+        background: 'var(--surface-container)', border: '1px solid var(--outline-variant)',
+        // Leaflet usa z-index 400+ en sus paneles internos; sin un contexto de
+        // apilamiento propio, el mapa se pinta encima de overlays como la oferta.
+        position: 'relative', zIndex: 0, isolation: 'isolate',
+        ...style,
       }}
     />
   );

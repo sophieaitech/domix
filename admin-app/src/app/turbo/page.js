@@ -109,7 +109,7 @@ export default function TurboPage() {
               Objetivo: entrega antes de {PROMESA_MIN}:00 min
             </div>
             <div style={{ height: 7, borderRadius: 99, background: 'var(--surface-high)', marginTop: 16, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: 'linear-gradient(90deg,#57A82F,#43922B)', transition: 'width 1s linear' }} />
+              <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: 'linear-gradient(90deg,#3E9330,#2F7A24)', transition: 'width 1s linear' }} />
             </div>
           </div>
 

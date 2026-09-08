@@ -23,17 +23,17 @@ export function Card({ children, style, tone = 'lowest', elevation = 1, ...rest 
 
 /* Tarjeta hero en azul de marca, con halo de color (naranja o verde). */
 export function HeroCard({ children, glow = 'green', style }) {
-  const glowColor = glow === 'navy' ? 'rgba(46,123,196,.34)' : 'rgba(87,168,47,.32)';
+  const glowColor = glow === 'navy' ? 'rgba(46,123,196,.26)' : 'rgba(78,163,60,.24)';
   return (
     <div
       style={{
         position: 'relative', overflow: 'hidden', borderRadius: 'var(--sh-xl)', padding: 20,
         background: 'linear-gradient(150deg,#2A241E 0%,#17140F 58%,#12100D 100%)',
-        color: 'var(--on-inverse-surface)', boxShadow: 'var(--elev-4)', ...style,
+        color: '#F6F5F2', boxShadow: 'var(--elev-4)', ...style,
       }}
     >
       <div style={{ position: 'absolute', right: -50, top: -66, width: 208, height: 208, borderRadius: '50%', background: `radial-gradient(circle,${glowColor},transparent 70%)` }} />
-      <div style={{ position: 'absolute', left: -60, bottom: -80, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle,rgba(46,123,196,.18),transparent 70%)' }} />
+      <div style={{ position: 'absolute', left: -60, bottom: -80, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle,rgba(46,123,196,.14),transparent 70%)' }} />
       <div style={{ position: 'relative' }}>{children}</div>
     </div>
   );

@@ -30,9 +30,9 @@ export default function ModeSwitch({ compact = false }) {
           style={{
             display: 'flex', alignItems: 'center', gap: 6, height: compact ? 30 : 34, padding: compact ? '0 11px' : '0 14px',
             borderRadius: 'var(--sh-full)', fontSize: compact ? 11.5 : 12.5, fontWeight: 800,
-            background: isDemo ? 'linear-gradient(135deg,#57A82F,#43922B)' : 'transparent',
+            background: isDemo ? 'linear-gradient(135deg,#3E9330,#2F7A24)' : 'transparent',
             color: isDemo ? '#fff' : 'var(--on-surface-variant)',
-            boxShadow: isDemo ? '0 2px 10px rgba(67,146,43,.34)' : 'none',
+            boxShadow: isDemo ? '0 2px 10px rgba(47,122,36,.3)' : 'none',
           }}
         >
           <Icon name="science" size={compact ? 15 : 16} fill={isDemo} />
@@ -43,9 +43,9 @@ export default function ModeSwitch({ compact = false }) {
           style={{
             display: 'flex', alignItems: 'center', gap: 6, height: compact ? 30 : 34, padding: compact ? '0 11px' : '0 14px',
             borderRadius: 'var(--sh-full)', fontSize: compact ? 11.5 : 12.5, fontWeight: 800,
-            background: !isDemo ? 'linear-gradient(135deg,#57A82F,#43922B)' : 'transparent',
+            background: !isDemo ? 'linear-gradient(135deg,#3E9330,#2F7A24)' : 'transparent',
             color: !isDemo ? '#fff' : 'var(--on-surface-variant)',
-            boxShadow: !isDemo ? '0 2px 10px rgba(67,146,43,.3)' : 'none',
+            boxShadow: !isDemo ? '0 2px 10px rgba(47,122,36,.28)' : 'none',
           }}
         >
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: !isDemo ? '#fff' : 'var(--outline)', animation: !isDemo ? 'dxGlow 1.4s infinite' : 'none' }} />
@@ -79,7 +79,7 @@ export default function ModeSwitch({ compact = false }) {
               </button>
               <button
                 onClick={() => { changeMode('live'); setConfirm(false); }}
-                style={{ flex: 1, height: 46, borderRadius: 'var(--sh-full)', background: 'linear-gradient(135deg,#57A82F,#43922B)', color: '#fff', fontSize: 13.5, fontWeight: 800 }}
+                style={{ flex: 1, height: 46, borderRadius: 'var(--sh-full)', background: 'linear-gradient(135deg,#3E9330,#2F7A24)', color: '#fff', fontSize: 13.5, fontWeight: 800 }}
               >
                 Activar en vivo
               </button>
