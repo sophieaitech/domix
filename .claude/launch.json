@@ -6,6 +6,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "repartidor-app", "run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "domix-cliente",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "cliente-app", "run", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "domix-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "admin-app", "run", "dev"],
+      "port": 3002
     }
   ]
 }
