@@ -121,5 +121,20 @@ $$ language sql security definer stable;
 -- ------------------------------------------------------------
 -- 5. Realtime: el panel y el cliente reciben los cambios al instante
 -- ------------------------------------------------------------
-alter publication supabase_realtime add table public.service_requests;
-alter publication supabase_realtime add table public.courier_profiles;
+-- Se agregan solo si no están ya publicadas, para poder re-ejecutar la migración.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'service_requests'
+  ) then
+    alter publication supabase_realtime add table public.service_requests;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'courier_profiles'
+  ) then
+    alter publication supabase_realtime add table public.courier_profiles;
+  end if;
+end $$;

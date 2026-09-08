@@ -5,3 +5,6 @@ out/
 .env*.local
 *.log
 .DS_Store
+
+# Token de Supabase — nunca se sube
+.supabase-token
