@@ -37,9 +37,8 @@ export default function Splash() {
       <div style={{ animation: 'trPop .7s cubic-bezier(.2,.8,.2,1) both', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         {/* El logo va sobre fondo blanco, así que lo montamos en un badge
             redondeado: se lee como el icono de la app sobre el negro. */}
-        <div style={{ width: 116, height: 116, borderRadius: 30, background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 18px 50px rgba(0,0,0,.5)' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/domix-logo-sm.jpg" alt="Domix" style={{ width: 116, height: 116, objectFit: 'cover' }} />
+        <div>{/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/domix-logo-dark-sm.png" alt="Domix" style={{ width: 150, height: 150, objectFit: 'contain' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, marginTop: 22 }}>
           <div style={{ font: "800 34px/1 'Bricolage Grotesque',sans-serif", letterSpacing: '-.05em', color: '#fff' }}>

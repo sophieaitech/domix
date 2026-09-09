@@ -75,30 +75,22 @@ export default function Splash() {
           />
         ))}
 
-        <div
-          style={{
-            width: 132, height: 132, borderRadius: 34, background: '#fff', overflow: 'hidden',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 20px 54px rgba(0,0,0,.55)',
-            animation: 'dxLlega .72s cubic-bezier(.2,.9,.25,1) both',
-          }}
-        >
+        <div style={{ animation: 'dxLlega .72s cubic-bezier(.2,.9,.25,1) both' }}>
+          {/* Logo sin fondo: el marino se convirtio en blanco para que se lea
+              sobre el negro y el naranja de la caja siga siendo el acento. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/assets/domix-logo-sm.jpg"
+            src="/assets/domix-logo-dark-sm.png"
             alt="Domix"
-            width={132}
-            height={132}
-            style={{ width: 132, height: 132, objectFit: 'cover' }}
+            width={160}
+            height={160}
+            style={{ width: 160, height: 160, objectFit: 'contain', display: 'block' }}
           />
         </div>
       </div>
 
-      <div style={{ animation: 'dxTexto .5s ease .5s both', textAlign: 'center', marginTop: 22 }}>
-        <div style={{ font: '800 30px/1 Manrope,sans-serif', letterSpacing: '-.05em', color: '#fff' }}>
-          Domi<span style={{ color: '#5FBF45' }}>X</span>
-        </div>
-        <div style={{ font: '600 9.5px Manrope,sans-serif', letterSpacing: '.19em', color: 'rgba(255,255,255,.42)', marginTop: 8 }}>
+      <div style={{ animation: 'dxTexto .5s ease .5s both', textAlign: 'center', marginTop: 6 }}>
+        <div style={{ font: '600 9.5px Manrope,sans-serif', letterSpacing: '.19em', color: 'rgba(255,255,255,.42)' }}>
           MENSAJERÍA &amp; LOGÍSTICA
         </div>
       </div>
