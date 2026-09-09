@@ -8,3 +8,6 @@ out/
 
 # Token de Supabase — nunca se sube
 .supabase-token
+
+# Archivos temporales de trabajo
+scratch_*
