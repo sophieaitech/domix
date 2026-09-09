@@ -91,6 +91,14 @@ export async function createCourier({ first_name, last_name, phone_number, work_
   return { data: profile };
 }
 
+/* Salida de emergencia: cuando el cliente no tiene el código a la mano,
+   soporte lo consulta desde el panel y se lo dicta al repartidor. */
+export async function fetchDeliveryPin(requestId) {
+  const { data, error } = await supabase.rpc('admin_delivery_pin', { p_request_id: requestId });
+  if (error) return null;
+  return data || null;
+}
+
 export async function createRequestFromAdmin(payload) {
   return supabase.from('service_requests').insert({ ...payload, source: 'admin' }).select().single();
 }

@@ -109,6 +109,33 @@ export default function SeguimientoPage() {
                 {req.turbo && <Pill icon="bolt" tone="navy">TURBO</Pill>}
               </div>
 
+              {/* Código de entrega: lo que el cliente le dicta al repartidor.
+                  Se muestra grande mientras el pedido siga en curso. */}
+              {req.delivery_pin && !cancelled && req.status !== 'delivered' && (
+                <div style={{ borderRadius: 16, background: 'var(--inv)', color: 'var(--invtx)', padding: '18px 16px', marginBottom: 18, textAlign: 'center' }}>
+                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.14em', opacity: 0.6 }}>
+                    CÓDIGO DE ENTREGA
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 9, margin: '12px 0 10px' }}>
+                    {String(req.delivery_pin).split('').map((d, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          width: 46, height: 56, borderRadius: 12, background: 'rgba(255,255,255,.13)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          font: "800 26px 'IBM Plex Mono',monospace",
+                        }}
+                      >
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ font: '500 12px/1.45 Manrope,sans-serif', opacity: 0.65 }}>
+                    Dáselo al repartidor cuando te entregue. Sin este código no puede cerrar el pedido.
+                  </div>
+                </div>
+              )}
+
               {/* Datos del pedido */}
               <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
                 <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>

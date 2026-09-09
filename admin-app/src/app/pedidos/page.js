@@ -6,7 +6,7 @@ import TopBar from '../../components/TopBar';
 import MapView from '../../components/MapView';
 import { Icon, Card, Overline, Button, Chip, Field, Spinner, EmptyState } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
-import { SERVICE_LABELS, SERVICE_ICON, STATUS_META, BOARD_COLUMNS, OPEN_STATUSES } from '../../lib/ops';
+import { SERVICE_LABELS, SERVICE_ICON, STATUS_META, BOARD_COLUMNS, OPEN_STATUSES , fetchDeliveryPin } from '../../lib/ops';
 import { money, quote, etaMinutes } from '../../lib/pricing';
 import { routeBetween } from '../../lib/geo';
 
@@ -120,6 +120,9 @@ function OrderDrawer({ req, couriers, onClose, onAdvance }) {
 
   const st = STATUS_META[req.status] || STATUS_META.requested;
 
+  const [pin, setPin] = useState(null);
+  const verPin = async () => setPin(await fetchDeliveryPin(req.id) || '----');
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--scrim)', display: 'flex', justifyContent: 'flex-end', animation: 'dxFadeIn .15s ease' }}>
       <div
@@ -144,6 +147,25 @@ function OrderDrawer({ req, couriers, onClose, onAdvance }) {
         </div>
 
         <div style={{ padding: 20 }}>
+          {/* Código de entrega: solo se descubre a propósito, porque es
+              lo que prueba que el pedido llegó a su dueño. */}
+          {OPEN_STATUSES.includes(req.status) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: 12, background: 'var(--sf)', marginBottom: 16 }}>
+              <Icon name="password" size={19} color="var(--mu)" />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', font: '700 12.5px Manrope,sans-serif' }}>Código de entrega</span>
+                <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>
+                  Dícteselo al repartidor solo si el cliente no lo tiene
+                </span>
+              </span>
+              {pin ? (
+                <span className="num" style={{ font: "800 20px 'IBM Plex Mono',monospace", letterSpacing: '.12em' }}>{pin}</span>
+              ) : (
+                <Button variant="outline" onClick={verPin} style={{ height: 34, fontSize: 12 }}>Ver</Button>
+              )}
+            </div>
+          )}
+
           {(pickup || dropoff) && (
             <MapView
               height={220}

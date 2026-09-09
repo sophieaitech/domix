@@ -7,6 +7,7 @@ import { Icon, Card, Overline, Button, Chip, EmptyState } from '../../components
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
 import ModeSwitch from '../../components/ModeSwitch';
+import PinEntrega from '../../components/PinEntrega';
 import { fetchCourierDeliveries, updateRequestStatus, serviceLabel, SERVICE_ICON } from '../../lib/serviceRequests';
 
 const money = (n) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
@@ -37,6 +38,7 @@ function EntregasContent() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('activos');
+  const [pinPara, setPinPara] = useState(null);
 
   const load = () => {
     if (isDemo) return setLoading(false);
@@ -50,6 +52,8 @@ function EntregasContent() {
   const advance = async (req) => {
     const next = NEXT[req.status];
     if (!next) return;
+    // La entrega no se cierra sola: exige el PIN que dicta el cliente.
+    if (next === 'delivered' && !isDemo) return setPinPara(req);
     if (isDemo) return demoAdvance(req.id, next);
     const { error } = await updateRequestStatus(req.id, next);
     if (!error) load();
@@ -166,6 +170,14 @@ function EntregasContent() {
           );
         })}
       </div>
+
+      {pinPara && (
+        <PinEntrega
+          request={pinPara}
+          onClose={() => setPinPara(null)}
+          onConfirmado={() => { setPinPara(null); load(); }}
+        />
+      )}
 
       <BottomNav badges={{ '/entregas': items.filter((d) => ['assigned', 'picked_up', 'in_progress'].includes(d.status)).length }} />
     </>
