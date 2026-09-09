@@ -57,8 +57,12 @@ export function CourierSessionProvider({ children }) {
     else { setProfile(null); setCourierProfile(null); setLoading(false); }
   }, [isDemo, modeReady, loadReal]);
 
-  const selectCourier = useCallback(async (id) => {
-    try { localStorage.setItem(KEY, id); } catch { /* ignorar */ }
+  /* `sesion` llega cuando se entró con clave; en Demo no hay. */
+  const selectCourier = useCallback(async (id, sesion = null) => {
+    try {
+      localStorage.setItem(KEY, id);
+      if (sesion) localStorage.setItem('domix_sesion', JSON.stringify(sesion));
+    } catch { /* ignorar */ }
     setCourierId(id);
     setLoading(true);
     if (id.startsWith('demo-')) {
@@ -123,7 +127,7 @@ export function CourierSessionProvider({ children }) {
   }, []);
 
   const signOut = useCallback(() => {
-    try { localStorage.removeItem(KEY); } catch { /* ignorar */ }
+    try { localStorage.removeItem(KEY); localStorage.removeItem('domix_sesion'); } catch { /* ignorar */ }
     setCourierId(null);
     setProfile(null);
     setCourierProfile(null);

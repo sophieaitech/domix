@@ -1,5 +1,6 @@
 import './globals.css';
 import { AppModeProvider } from '../context/AppModeProvider';
+import { AuthProvider } from '../context/AuthProvider';
 import { ThemeProvider } from '../context/ThemeProvider';
 import { OpsProvider } from '../context/OpsProvider';
 import Sidebar from '../components/Sidebar';
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <ThemeProvider>
+          <AuthProvider>
           <AppModeProvider>
           <OpsProvider>
             <div className="dx-admin">
@@ -32,6 +34,7 @@ export default function RootLayout({ children }) {
             <Onboarding />
           </OpsProvider>
         </AppModeProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
