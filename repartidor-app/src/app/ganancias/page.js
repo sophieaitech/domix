@@ -1,29 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RequireSession from '../../components/RequireSession';
 import BottomNav from '../../components/BottomNav';
-import { Icon, Card, HeroCard, Overline, Chip, StatTile, EmptyState, Button } from '../../components/ui';
+import { Icon, Card, HeroCard, Overline, StatTile, EmptyState, Button } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
 import ModeSwitch from '../../components/ModeSwitch';
+import HojaRetiro from '../../components/HojaRetiro';
 import { fetchWeekEarnings, serviceLabel, SERVICE_ICON } from '../../lib/serviceRequests';
+import { fetchSaldo, fetchRetiros, dinero, ESTADO_RETIRO, METODOS_RETIRO } from '../../lib/cuenta';
 
-const money = (n) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 function GananciasContent() {
   const { courierProfile, courierId, demoRequests } = useCourierSession();
   const { isDemo } = useAppMode();
   const [liveRecords, setLiveRecords] = useState([]);
+  const [saldo, setSaldo] = useState({ ganado: 0, retirado: 0, pendiente: 0, disponible: 0, entregas: 0 });
+  const [retiros, setRetiros] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoja, setHoja] = useState(false);
 
-  useEffect(() => {
-    if (isDemo) return setLoading(false);
-    if (!courierProfile?.id) return;
+  const id = courierProfile?.id;
+
+  const recargar = useCallback(async () => {
+    if (isDemo || !id) return setLoading(false);
     setLoading(true);
-    fetchWeekEarnings(courierProfile.id).then(setLiveRecords).catch(() => setLiveRecords([])).finally(() => setLoading(false));
-  }, [courierProfile?.id, isDemo]);
+    const [semana, s, r] = await Promise.all([
+      fetchWeekEarnings(id).catch(() => []),
+      fetchSaldo(id),
+      fetchRetiros(id),
+    ]);
+    setLiveRecords(semana);
+    setSaldo(s);
+    setRetiros(r);
+    setLoading(false);
+  }, [id, isDemo]);
+
+  useEffect(() => { recargar(); }, [recargar]);
 
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - 6);
@@ -41,11 +56,17 @@ function GananciasContent() {
     const b = buckets.find((x) => x.key === new Date(r.delivered_at).toDateString());
     if (b) b.total += Number(r.price || 0) + Number(r.tip || 0);
   }
-  const total = buckets.reduce((s, b) => s + b.total, 0);
+  const semana = buckets.reduce((s, b) => s + b.total, 0);
   const max = Math.max(1, ...buckets.map((b) => b.total));
   const tips = records.reduce((s, r) => s + Number(r.tip || 0), 0);
   const fees = records.reduce((s, r) => s + Number(r.price || 0), 0);
   const today = new Date().toDateString();
+
+  /* En demo no hay saldo real: se muestra lo de la semana para que la
+     pantalla no aparezca en ceros. */
+  const disponible = isDemo ? semana : saldo.disponible;
+  const enCurso = retiros.find((r) => r.status === 'pending');
+  const metodo = METODOS_RETIRO.find((m) => m.id === courierProfile?.payout_method);
 
   return (
     <>
@@ -57,10 +78,21 @@ function GananciasContent() {
       <div className="dx-page sc">
         <HeroCard glow="green">
           <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Disponible para retirar</Overline>
-          <div className="num" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', marginTop: 6 }}>{money(total)}</div>
+          <div className="num" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', marginTop: 6 }}>{dinero(disponible)}</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>
-            {courierProfile?.payout_account ? `Se consigna a ${courierProfile.payout_account}` : 'Registra tu cuenta de retiro en Cuenta'}
+            {courierProfile?.payout_account
+              ? `Se consigna a tu ${metodo?.label || 'cuenta'} ${courierProfile.payout_account}`
+              : 'Registra tu cuenta de retiro en Cuenta'}
           </div>
+
+          {/* De lo ganado, cuánto ya salió */}
+          {!isDemo && saldo.ganado > 0 && (
+            <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,.5)' }}>
+              <span>Ganado <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.ganado)}</b></span>
+              <span>Retirado <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.retirado)}</b></span>
+              {saldo.pendiente > 0 && <span>En curso <b className="num" style={{ color: '#F0B354' }}>{dinero(saldo.pendiente)}</b></span>}
+            </div>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, height: 84, marginTop: 20 }}>
             {buckets.map((b) => {
@@ -84,12 +116,57 @@ function GananciasContent() {
           </div>
         </HeroCard>
 
+        {/* Retiro en curso: lo primero que quiere ver quien ya pidió */}
+        {enCurso && (
+          <Card style={{ padding: 14, marginTop: 14, borderLeft: '3px solid var(--tertiary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <Icon name="schedule" size={20} fill color="var(--on-tertiary-container)" />
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>Retiro en camino</span>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
+                  Pedido el {new Date(enCurso.requested_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} · {enCurso.account}
+                </span>
+              </span>
+              <span className="num" style={{ fontWeight: 800, fontSize: 16, color: 'var(--tertiary)' }}>{dinero(enCurso.amount)}</span>
+            </div>
+          </Card>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-          <StatTile icon="local_shipping" tone="primary" value={money(fees)} label="Tarifas de entrega" />
-          <StatTile icon="volunteer_activism" tone="secondary" value={money(tips)} label="Propinas" />
+          <StatTile icon="local_shipping" tone="primary" value={dinero(fees)} label="Tarifas de la semana" />
+          <StatTile icon="volunteer_activism" tone="secondary" value={dinero(tips)} label="Propinas" />
           <StatTile icon="inventory_2" tone="tertiary" value={records.length} label="Entregas de la semana" />
-          <StatTile icon="account_balance" tone="primary" value={courierProfile?.payout_account || '—'} label="Cuenta de retiro" />
+          <StatTile icon="savings" tone="primary" value={dinero(isDemo ? semana : saldo.ganado)} label="Ganado en total" />
         </div>
+
+        {/* Historial de retiros */}
+        {retiros.length > 0 && (
+          <>
+            <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>Mis retiros</Overline>
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
+              {retiros.map((r, i) => {
+                const st = ESTADO_RETIRO[r.status] || ESTADO_RETIRO.pending;
+                return (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderTop: i ? '1px solid var(--outline-variant)' : 'none' }}>
+                    <span style={{ width: 38, height: 38, borderRadius: 'var(--sh-sm)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                      <Icon name={st.icon} size={19} fill color={st.color} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 700, fontSize: 13.5, color: st.color }}>{st.label}</span>
+                      <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
+                        {new Date(r.requested_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                        {r.reference ? ` · ${r.reference}` : r.account ? ` · ${r.account}` : ''}
+                      </span>
+                    </span>
+                    <span className="num" style={{ fontWeight: 800, fontSize: 15 }}>−{dinero(r.amount)}</span>
+                  </div>
+                );
+              })}
+            </Card>
+          </>
+        )}
 
         <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>Movimientos</Overline>
 
@@ -111,19 +188,28 @@ function GananciasContent() {
                   </span>
                 </span>
                 <span className="num" style={{ fontWeight: 800, fontSize: 15, color: 'var(--primary)' }}>
-                  +{money(Number(r.price || 0) + Number(r.tip || 0))}
+                  +{dinero(Number(r.price || 0) + Number(r.tip || 0))}
                 </span>
               </div>
             ))}
           </Card>
         )}
 
-        {total > 0 && (
-          <Button full icon="account_balance_wallet" color="var(--secondary)" style={{ marginTop: 14 }}>
+        {!isDemo && disponible > 0 && !enCurso && (
+          <Button full icon="account_balance_wallet" color="var(--secondary)" style={{ marginTop: 14 }} onClick={() => setHoja(true)}>
             Solicitar retiro
           </Button>
         )}
       </div>
+
+      <HojaRetiro
+        abierta={hoja}
+        disponible={disponible}
+        perfil={courierProfile}
+        courierId={id}
+        onClose={() => setHoja(false)}
+        onListo={recargar}
+      />
 
       <BottomNav />
     </>

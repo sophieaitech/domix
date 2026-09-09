@@ -24,6 +24,7 @@ const NAV = [
   {
     title: 'DINERO',
     items: [
+      { label: 'Pagos y documentos', path: '/pagos', icon: 'account_balance_wallet', badge: 'retiros' },
       { label: 'Motor de despacho', path: '/despacho', icon: 'tune' },
       { label: 'Domix Turbo', path: '/turbo', icon: 'bolt', tag: 'PRO' },
     ],
@@ -72,7 +73,9 @@ export default function Sidebar() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {group.items.map((n) => {
                 const active = pathname === n.path;
-                const badge = n.badge === 'pending' ? stats.pending : 0;
+                const badge = n.badge === 'pending' ? stats.pending
+                  : n.badge === 'retiros' ? stats.porResolver
+                  : 0;
                 return (
                   <button key={n.path} className="dx-navitem" data-active={active} onClick={() => router.push(n.path)}>
                     <Icon name={n.icon} size={19} fill={active} />

@@ -1,60 +1,73 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RequireSession from '../../components/RequireSession';
 import BottomNav from '../../components/BottomNav';
-import { Icon, Card, HeroCard, Overline, Button, Chip } from '../../components/ui';
+import { Icon, Card, HeroCard, Button, Chip } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
 import { useTheme } from '../../context/ThemeProvider';
 import ModeSwitch from '../../components/ModeSwitch';
 import ThemeToggle from '../../components/ThemeToggle';
+import HojaDocumento from '../../components/HojaDocumento';
+import HojaVehiculo from '../../components/HojaVehiculo';
+import HojaCuentaRetiro from '../../components/HojaCuentaRetiro';
 import { DEMO_DOCS, DEMO_VEHICLE } from '../../lib/demo';
-import { supabase } from '../../lib/supabaseClient';
-
-const DOCS = [
-  { type: 'cedula', label: 'Cédula', icon: 'badge' },
-  { type: 'licencia', label: 'Licencia de conducción', icon: 'directions_car' },
-  { type: 'soat', label: 'SOAT', icon: 'health_and_safety' },
-  { type: 'tarjeta_propiedad', label: 'Tarjeta de propiedad', icon: 'description' },
-];
-
-const DOC_STATUS = {
-  approved: { label: 'Aprobada', color: 'var(--secondary)', icon: 'check_circle' },
-  pending: { label: 'Pendiente', color: 'var(--on-surface-variant)', icon: 'schedule' },
-  expiring_soon: { label: 'Vence pronto', color: 'var(--tertiary)', icon: 'error' },
-  rejected: { label: 'Rechazada', color: 'var(--error)', icon: 'cancel' },
-};
-
-const VEHICLES = { moto: 'Moto', bicicleta: 'Bicicleta', a_pie: 'A pie', carro: 'Carro' };
+import { DOCS, DOC_STATUS, VEHICULOS, METODOS_RETIRO, fetchDocumentos, fetchVehiculo } from '../../lib/cuenta';
 
 function CuentaContent() {
   const { profile, courierProfile, signOut } = useCourierSession();
   const { isDemo } = useAppMode();
   const { theme, changeTheme } = useTheme();
+
   const [docs, setDocs] = useState([]);
   const [vehicle, setVehicle] = useState(null);
+  const [perfil, setPerfil] = useState(courierProfile);
+  const [hoja, setHoja] = useState(null);       // 'vehiculo' | 'retiro' | null
+  const [docAbierto, setDocAbierto] = useState(null);
 
-  useEffect(() => {
+  const courierId = courierProfile?.id;
+
+  useEffect(() => { setPerfil(courierProfile); }, [courierProfile]);
+
+  const recargar = useCallback(async () => {
     if (isDemo) {
       setDocs(DEMO_DOCS);
       setVehicle(DEMO_VEHICLE);
       return;
     }
-    if (!courierProfile?.id) return;
-    supabase.from('courier_documents').select('*').eq('courier_id', courierProfile.id).then(({ data }) => setDocs(data || []));
-    supabase.from('vehicles').select('*').eq('courier_id', courierProfile.id).eq('is_active', true).maybeSingle().then(({ data }) => setVehicle(data || null));
-  }, [courierProfile?.id, isDemo]);
+    if (!courierId) return;
+    const [d, v] = await Promise.all([fetchDocumentos(courierId), fetchVehiculo(courierId)]);
+    setDocs(d);
+    setVehicle(v);
+  }, [courierId, isDemo]);
 
-  const approved = docs.filter((d) => d.status === 'approved').length;
-  const expiring = docs.find((d) => d.status === 'expiring_soon');
+  useEffect(() => { recargar(); }, [recargar]);
+
+  const aprobados = docs.filter((d) => d.status === 'approved').length;
+  const porVencer = docs.find((d) => d.status === 'expiring_soon');
+  const rechazado = docs.find((d) => d.status === 'rejected');
+  const faltantes = DOCS.length - docs.length;
   const inits = ((profile?.first_name?.[0] || 'D') + (profile?.last_name?.[0] || '')).toUpperCase();
 
+  const vehLabel = vehicle
+    ? `${VEHICULOS.find((v) => v.id === vehicle.vehicle_type)?.label || vehicle.vehicle_type} ${vehicle.plate || ''}`.trim()
+    : 'Sin registrar';
+  const cuentaLabel = perfil?.payout_account
+    ? `${METODOS_RETIRO.find((m) => m.id === perfil.payout_method)?.label || ''} ${perfil.payout_account}`.trim()
+    : 'Sin registrar';
+
+  /* En demo no se escribe nada en la base: se avisa en vez de fallar. */
+  const abrir = (cual) => {
+    if (isDemo) return;
+    setHoja(cual);
+  };
+
   const rows = [
-    { icon: 'two_wheeler', label: 'Mi vehículo', value: vehicle ? `${VEHICLES[vehicle.vehicle_type] || vehicle.vehicle_type} ${vehicle.plate || ''}`.trim() : 'Sin registrar' },
-    { icon: 'account_balance', label: 'Cuenta para retiros', value: courierProfile?.payout_account || 'Sin registrar' },
-    { icon: 'map', label: 'Zona de trabajo', value: courierProfile?.work_zone || 'Centro' },
-    { icon: 'schedule', label: 'Horario preferido', value: courierProfile?.preferred_schedule || 'Sin definir' },
+    { icon: 'two_wheeler', label: 'Mi vehículo', value: vehLabel, falta: !vehicle, onClick: () => abrir('vehiculo') },
+    { icon: 'account_balance', label: 'Cuenta para retiros', value: cuentaLabel, falta: !perfil?.payout_account, onClick: () => abrir('retiro') },
+    { icon: 'map', label: 'Zona de trabajo', value: perfil?.work_zone || 'Centro' },
+    { icon: 'schedule', label: 'Horario preferido', value: perfil?.preferred_schedule || 'Sin definir' },
     { icon: 'support_agent', label: 'Ayuda y soporte', value: '' },
   ];
 
@@ -80,9 +93,9 @@ function CuentaContent() {
 
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
             {[
-              { v: Number(courierProfile?.rating || 5).toFixed(1), l: 'Calificación' },
-              { v: courierProfile?.total_deliveries || 0, l: 'Entregas' },
-              { v: `${approved}/4`, l: 'Documentos' },
+              { v: Number(perfil?.rating || 5).toFixed(1), l: 'Calificación' },
+              { v: perfil?.total_deliveries || 0, l: 'Entregas' },
+              { v: `${aprobados}/4`, l: 'Documentos' },
             ].map((s) => (
               <span key={s.l} style={{ flex: 1, background: 'rgba(255,255,255,.09)', borderRadius: 'var(--sh-sm)', padding: '11px 8px', textAlign: 'center' }}>
                 <span className="num" style={{ display: 'block', fontWeight: 700, fontSize: 17 }}>{s.v}</span>
@@ -92,34 +105,55 @@ function CuentaContent() {
           </div>
         </HeroCard>
 
+        {/* Documentos: cada fila abre su hoja para subir o reemplazar */}
         <Card style={{ padding: 16, marginTop: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ fontSize: 14, fontWeight: 800 }}>Documentos</span>
-            <Chip icon={approved === 4 ? 'verified' : 'pending'} bg={approved === 4 ? 'var(--secondary-container)' : 'var(--surface-container)'} color={approved === 4 ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)'}>
-              {approved} de 4
+            <Chip
+              icon={aprobados === 4 ? 'verified' : 'pending'}
+              bg={aprobados === 4 ? 'var(--secondary-container)' : 'var(--surface-container)'}
+              color={aprobados === 4 ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)'}
+            >
+              {aprobados} de 4
             </Chip>
           </div>
 
           {DOCS.map((d) => {
             const doc = docs.find((x) => x.doc_type === d.type);
-            const st = DOC_STATUS[doc?.status || 'pending'];
+            const st = DOC_STATUS[doc ? doc.status : 'falta'];
             return (
-              <div key={d.type} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid var(--outline-variant)' }}>
+              <button
+                key={d.type}
+                onClick={() => !isDemo && setDocAbierto(d)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid var(--outline-variant)', textAlign: 'left', background: 'transparent' }}
+              >
                 <span style={{ width: 36, height: 36, borderRadius: 'var(--sh-sm)', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                   <Icon name={d.icon} size={18} color="var(--on-surface-variant)" />
                 </span>
-                <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700 }}>{d.label}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700 }}>{d.label}</span>
+                  {doc?.expires_at && (
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--on-surface-variant)', marginTop: 1 }}>
+                      Vence el {new Date(`${doc.expires_at}T12:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                </span>
                 <Icon name={st.icon} size={19} fill color={st.color} />
-                <span style={{ fontSize: 11.5, fontWeight: 800, color: st.color, minWidth: 68, textAlign: 'right' }}>{st.label}</span>
-              </div>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: st.color, minWidth: 62, textAlign: 'right' }}>{st.label}</span>
+                <Icon name="chevron_right" size={18} color="var(--outline)" />
+              </button>
             );
           })}
 
-          {expiring && (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 12, padding: 12, borderRadius: 'var(--sh-sm)', background: 'var(--tertiary-container)' }}>
-              <Icon name="error" size={19} fill color="var(--on-tertiary-container)" />
-              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--on-tertiary-container)', lineHeight: 1.45 }}>
-                Tu {DOCS.find((d) => d.type === expiring.doc_type)?.label} vence pronto. Súbelo actualizado para no quedar inactivo.
+          {(porVencer || rechazado || faltantes > 0) && (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 12, padding: 12, borderRadius: 'var(--sh-sm)', background: rechazado ? 'var(--error-container)' : 'var(--tertiary-container)' }}>
+              <Icon name="error" size={19} fill color={rechazado ? 'var(--on-error-container)' : 'var(--on-tertiary-container)'} />
+              <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: rechazado ? 'var(--on-error-container)' : 'var(--on-tertiary-container)', lineHeight: 1.45 }}>
+                {rechazado
+                  ? `Tu ${DOCS.find((d) => d.type === rechazado.doc_type)?.label} fue rechazada. Tócala para subirla otra vez.`
+                  : porVencer
+                    ? `Tu ${DOCS.find((d) => d.type === porVencer.doc_type)?.label} vence pronto. Súbela actualizada para no quedar inactivo.`
+                    : `Te faltan ${faltantes} ${faltantes === 1 ? 'documento' : 'documentos'}. Con todos aprobados te llegan más pedidos.`}
               </span>
             </div>
           )}
@@ -127,12 +161,20 @@ function CuentaContent() {
 
         <Card style={{ padding: 0, marginTop: 14, overflow: 'hidden' }}>
           {rows.map((row, i) => (
-            <button key={row.label} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', borderTop: i ? '1px solid var(--outline-variant)' : 'none', textAlign: 'left', background: 'transparent' }}>
+            <button
+              key={row.label}
+              onClick={row.onClick}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', borderTop: i ? '1px solid var(--outline-variant)' : 'none', textAlign: 'left', background: 'transparent' }}
+            >
               <span style={{ width: 38, height: 38, borderRadius: 'var(--sh-sm)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                 <Icon name={row.icon} size={19} color="var(--on-primary-container)" />
               </span>
               <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700 }}>{row.label}</span>
-              {row.value && <span style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', fontWeight: 600 }}>{row.value}</span>}
+              {row.value && (
+                <span style={{ fontSize: 12.5, color: row.falta ? 'var(--tertiary)' : 'var(--on-surface-variant)', fontWeight: row.falta ? 800 : 600, textAlign: 'right', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {row.value}
+                </span>
+              )}
               <Icon name="chevron_right" size={20} color="var(--outline)" />
             </button>
           ))}
@@ -175,6 +217,31 @@ function CuentaContent() {
           Domix · Mensajería &amp; Logística · Buenaventura
         </div>
       </div>
+
+      <HojaDocumento
+        abierta={!!docAbierto}
+        doc={docAbierto}
+        actual={docs.find((x) => x.doc_type === docAbierto?.type)}
+        courierId={courierId}
+        onClose={() => setDocAbierto(null)}
+        onGuardado={recargar}
+      />
+
+      <HojaVehiculo
+        abierta={hoja === 'vehiculo'}
+        actual={vehicle}
+        courierId={courierId}
+        onClose={() => setHoja(null)}
+        onGuardado={setVehicle}
+      />
+
+      <HojaCuentaRetiro
+        abierta={hoja === 'retiro'}
+        perfil={perfil}
+        courierId={courierId}
+        onClose={() => setHoja(null)}
+        onGuardado={setPerfil}
+      />
 
       <BottomNav />
     </>

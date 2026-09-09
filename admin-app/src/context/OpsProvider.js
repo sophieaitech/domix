@@ -7,12 +7,14 @@ import { HOME_BRANCH } from '../lib/cities';
 import { DEFAULT_RULES, autoSurgeFor } from '../lib/pricing';
 import { fetchRequests, fetchCouriers, fetchBranches, assignCourier, setRequestStatus, createRequestFromAdmin, subscribeOps, OPEN_STATUSES } from '../lib/ops';
 import { pushNotify } from '../lib/notify';
+import { contarPendientes } from '../lib/pagos';
 
 const OpsContext = createContext(null);
 const RULES_KEY = 'domix_rules';
 
 export function OpsProvider({ children }) {
   const { isDemo, ready } = useAppMode();
+  const [porResolver, setPorResolver] = useState(0);
 
   const [requests, setRequests] = useState([]);
   const [couriers, setCouriers] = useState([]);
@@ -35,7 +37,10 @@ export function OpsProvider({ children }) {
   /* ---------- Carga según el modo ---------- */
   const loadLive = useCallback(async () => {
     try {
-      const [r, c, b] = await Promise.all([fetchRequests(), fetchCouriers(), fetchBranches().catch(() => [])]);
+      const [r, c, b, pend] = await Promise.all([
+        fetchRequests(), fetchCouriers(), fetchBranches().catch(() => []), contarPendientes().catch(() => 0),
+      ]);
+      setPorResolver(pend);
       setRequests(r);
       setCouriers(c.map((x) => ({
         id: x.id,
@@ -136,7 +141,7 @@ export function OpsProvider({ children }) {
         rules, effectiveRules, saveRules, suggestedSurge,
         assign, advance, createRequest, simulateIncoming, reload: loadLive,
         setBranches, setCouriers,
-        stats: { online, busy, pending, open: requests.filter((r) => OPEN_STATUSES.includes(r.status)).length },
+        stats: { online, busy, pending, porResolver, open: requests.filter((r) => OPEN_STATUSES.includes(r.status)).length },
       }}
     >
       {children}
