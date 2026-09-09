@@ -1,0 +1,11 @@
+# Lo que no debe viajar al contexto de build.
+# Sin esto se copian el node_modules y el .next del equipo local, que
+# vienen compilados para otro sistema y rompen la imagen.
+node_modules
+.next
+.git
+.env.local
+.env*.local
+npm-debug.log*
+Dockerfile
+.dockerignore

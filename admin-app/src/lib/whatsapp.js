@@ -49,12 +49,26 @@ export async function guardarBorrador(conversationId, draft) {
     .eq('id', conversationId);
 }
 
-/* El mensaje sale por la API de Meta a través de una función del servidor.
-   Aquí solo queda registrado para que la conversación se vea completa. */
-export async function registrarSalida(conversationId, body, author = 'domix') {
-  return supabase
-    .from('whatsapp_messages')
-    .insert({ conversation_id: conversationId, direction: 'saliente', body, author, status: 'enviando' });
+/* El mensaje sale de verdad, por la API de Meta, a través de una ruta del
+   servidor: el token no puede llegar al navegador. Esa misma ruta lo
+   registra en la conversación, así que aquí no se escribe nada.
+
+   Si Meta lo rechaza (número fuera de la ventana de 24 horas, token
+   vencido) se devuelve el motivo tal cual para que el despachador sepa
+   qué pasó, en vez de creer que el cliente ya recibió la respuesta. */
+export async function registrarSalida(conversationId, body, waId, author = 'domix') {
+  try {
+    const r = await fetch('/api/responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ waId, texto: body, conversationId, autor: author }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return { error: data?.error || 'No se pudo enviar el mensaje.' };
+    return { error: null };
+  } catch {
+    return { error: 'No hubo conexión con el servidor.' };
+  }
 }
 
 /* Escucha en vivo: la bandeja se mueve sola cuando entra un mensaje. */

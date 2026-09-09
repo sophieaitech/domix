@@ -218,7 +218,13 @@ export default function BandejaPage() {
       setMensajes((m) => [...m, { direction: 'saliente', body: texto, author: 'domix', created_at: new Date().toISOString() }]);
       return;
     }
-    await registrarSalida(activa.id, texto);
+    const { error: err } = await registrarSalida(activa.id, texto, activa.wa_id);
+    if (err) {
+      setError(err);
+      setRespuesta(texto);   // no se perdió lo que ya había escrito
+      return;
+    }
+    setError('');
     setMensajes(await fetchMensajes(activa.id));
   };
 
