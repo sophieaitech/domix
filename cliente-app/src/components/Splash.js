@@ -3,57 +3,107 @@
 import { useEffect, useState } from 'react';
 
 const KEY = 'domix_splash_seen';
-const DURATION = 1500;
+const DURACION = 1400;
 
-/* Pantalla de arranque: el logo entra, la barra corre y entra a la app.
-   Solo se muestra en la primera carga de la sesión. */
+/* Pantalla de arranque. El logo llega como llega una moto: entra desde la
+   izquierda, frena y se asienta. Todo con CSS sobre una imagen de 10 KB,
+   para que aparezca al instante incluso con señal débil.
+
+   (El video del logo no se usa: es H.264, que no lleva canal alfa, y trae
+   el cuadriculado de transparencia grabado como píxeles.) */
 export default function Splash() {
-  const [show, setShow] = useState(false);
-  const [leaving, setLeaving] = useState(false);
+  const [mostrar, setMostrar] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
 
   useEffect(() => {
-    let seen = false;
-    try { seen = sessionStorage.getItem(KEY) === '1'; } catch { /* ignorar */ }
-    if (seen) return;
+    let visto = false;
+    try { visto = sessionStorage.getItem(KEY) === '1'; } catch { /* ignorar */ }
+    if (visto) return;
 
-    setShow(true);
+    setMostrar(true);
     try { sessionStorage.setItem(KEY, '1'); } catch { /* ignorar */ }
 
-    const fade = setTimeout(() => setLeaving(true), DURATION);
-    const hide = setTimeout(() => setShow(false), DURATION + 320);
-    return () => { clearTimeout(fade); clearTimeout(hide); };
+    const t1 = setTimeout(() => setSaliendo(true), DURACION);
+    const t2 = setTimeout(() => setMostrar(false), DURACION + 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
-  if (!show) return null;
+  if (!mostrar) return null;
 
   return (
     <div
       style={{
         position: 'absolute', inset: 0, zIndex: 999, background: '#0a0a0a',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        opacity: leaving ? 0 : 1, transition: 'opacity .3s ease', pointerEvents: leaving ? 'none' : 'auto',
+        opacity: saliendo ? 0 : 1,
+        transition: 'opacity .3s ease',
+        pointerEvents: saliendo ? 'none' : 'auto',
       }}
     >
-      <div style={{ animation: 'trPop .7s cubic-bezier(.2,.8,.2,1) both', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* El logo va sobre fondo blanco, así que lo montamos en un badge
-            redondeado: se lee como el icono de la app sobre el negro. */}
-        <div style={{ width: 116, height: 116, borderRadius: 30, background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 18px 50px rgba(0,0,0,.5)' }}>
+      <style>{`
+        @keyframes dxLlega {
+          0%   { transform: translateX(-46px) scale(.94); opacity: 0 }
+          55%  { transform: translateX(6px)   scale(1.02); opacity: 1 }
+          100% { transform: translateX(0)     scale(1);    opacity: 1 }
+        }
+        @keyframes dxEstela {
+          0%   { transform: translateX(0) scaleX(.3); opacity: 0 }
+          35%  { opacity: .85 }
+          100% { transform: translateX(58px) scaleX(1); opacity: 0 }
+        }
+        @keyframes dxTexto {
+          from { opacity: 0; transform: translateY(7px) }
+          to   { opacity: 1; transform: none }
+        }
+      `}</style>
+
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Estelas de velocidad, como las del logo */}
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              left: -34,
+              top: `calc(50% + ${(i - 1) * 13}px)`,
+              width: 30 - i * 6,
+              height: 3,
+              borderRadius: 99,
+              background: i === 1 ? '#5FBF45' : 'rgba(255,255,255,.30)',
+              animation: `dxEstela .85s cubic-bezier(.2,.8,.2,1) ${0.1 + i * 0.07}s both`,
+            }}
+          />
+        ))}
+
+        <div
+          style={{
+            width: 132, height: 132, borderRadius: 34, background: '#fff', overflow: 'hidden',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 20px 54px rgba(0,0,0,.55)',
+            animation: 'dxLlega .72s cubic-bezier(.2,.9,.25,1) both',
+          }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/domix-logo.jpg" alt="Domix" style={{ width: 126, height: 126, objectFit: 'contain' }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, marginTop: 22 }}>
-          <div style={{ font: '800 34px/1 Manrope,sans-serif', letterSpacing: '-.05em', color: '#fff' }}>
-            Domi<span style={{ color: '#5FBF45' }}>X</span>
-          </div>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#5FBF45', marginBottom: 6 }} />
+          <img
+            src="/assets/domix-logo-sm.jpg"
+            alt="Domix"
+            width={132}
+            height={132}
+            style={{ width: 132, height: 132, objectFit: 'cover' }}
+          />
         </div>
       </div>
 
-      <div style={{ width: 110, height: 2, background: 'rgba(255,255,255,.16)', overflow: 'hidden', borderRadius: 2, marginTop: 26 }}>
-        <div style={{ width: '100%', height: '100%', background: '#5FBF45', transformOrigin: 'left', animation: `trBar ${DURATION}ms cubic-bezier(.4,0,.2,1) both` }} />
+      <div style={{ animation: 'dxTexto .5s ease .5s both', textAlign: 'center', marginTop: 22 }}>
+        <div style={{ font: '800 30px/1 Manrope,sans-serif', letterSpacing: '-.05em', color: '#fff' }}>
+          Domi<span style={{ color: '#5FBF45' }}>X</span>
+        </div>
+        <div style={{ font: '600 9.5px Manrope,sans-serif', letterSpacing: '.19em', color: 'rgba(255,255,255,.42)', marginTop: 8 }}>
+          MENSAJERÍA &amp; LOGÍSTICA
+        </div>
       </div>
 
-      <div style={{ position: 'absolute', bottom: 44, font: '500 10.5px Manrope,sans-serif', letterSpacing: '.18em', color: 'rgba(255,255,255,.38)' }}>
+      <div style={{ position: 'absolute', bottom: 44, font: '500 10.5px Manrope,sans-serif', letterSpacing: '.18em', color: 'rgba(255,255,255,.32)' }}>
         BUENAVENTURA · VALLE DEL CAUCA
       </div>
     </div>

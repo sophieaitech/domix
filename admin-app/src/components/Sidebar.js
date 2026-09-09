@@ -47,7 +47,7 @@ export default function Sidebar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '0 10px 20px' }}>
         <span style={{ width: 38, height: 38, borderRadius: 11, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', overflow: 'hidden' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/domix-logo.jpg" alt="Domix" style={{ width: 42, height: 42, objectFit: 'contain' }} />
+          <img src="/assets/domix-logo-sm.jpg" alt="Domix" style={{ width: 38, height: 38, objectFit: 'cover' }} />
         </span>
         <span style={{ minWidth: 0 }}>
           <span style={{ display: 'flex', alignItems: 'flex-end', gap: 2.5 }}>

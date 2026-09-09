@@ -39,7 +39,7 @@ export default function Splash() {
             redondeado: se lee como el icono de la app sobre el negro. */}
         <div style={{ width: 116, height: 116, borderRadius: 30, background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 18px 50px rgba(0,0,0,.5)' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/domix-logo.jpg" alt="Domix" style={{ width: 126, height: 126, objectFit: 'contain' }} />
+          <img src="/assets/domix-logo-sm.jpg" alt="Domix" style={{ width: 116, height: 116, objectFit: 'cover' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, marginTop: 22 }}>
           <div style={{ font: "800 34px/1 'Bricolage Grotesque',sans-serif", letterSpacing: '-.05em', color: '#fff' }}>
