@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import { Icon, Card, Overline, Button, Chip, Field, Spinner, EmptyState } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
 import { createCourier, OPEN_STATUSES } from '../../lib/ops';
@@ -82,6 +83,14 @@ export default function RepartidoresPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="repartidores"
+          tono="green"
+          titulo="Tu equipo en la calle"
+          frase="Registra a tu gente, dale su clave y sigue cómo le va: entregas del día, calificación y cuánto ha generado."
+          puntos={[{ i: 'person_add', t: 'Registrar', s: 'Queda listo para entrar a su app' }, { i: 'key', t: 'Su clave', s: 'Sin clave no puede entrar' }, { i: 'star', t: 'Rendimiento', s: 'Ves quién está rindiendo' }]}
+        />
+
 
       {nuevo && (
         <NuevoRepartidor

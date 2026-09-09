@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import { Icon, Card, Overline, Button, Chip, Switch } from '../../components/ui';
 import { useTheme } from '../../context/ThemeProvider';
 import { useOps } from '../../context/OpsProvider';
@@ -32,6 +33,14 @@ export default function EquipoPage() {
       <TopBar title="Seguridad y equipo" subtitle="Quién entra al panel, cómo se ve y qué alertas recibe" />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="equipo"
+          tono="navy"
+          titulo="Quién entra y qué puede tocar"
+          frase="Cada persona ve solo lo suyo. El despachador mueve pedidos pero no cambia tarifas; el repartidor solo ve su app."
+          puntos={[{ i: 'shield_person', t: 'Por rol', s: 'Administrador, despachador, repartidor' }, { i: 'dark_mode', t: 'Apariencia', s: 'Claro, oscuro o automático' }, { i: 'notifications_active', t: 'Alertas', s: 'Para no perderse un pedido' }]}
+        />
+
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16, alignItems: 'start' }}>
         <Card style={{ padding: 20 }}>

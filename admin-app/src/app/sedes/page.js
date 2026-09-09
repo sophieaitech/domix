@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import MapView from '../../components/MapView';
 import { Icon, Card, Overline, Button, Chip, Field, EmptyState } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
@@ -98,6 +99,14 @@ export default function SedesPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="sedes"
+          tono="purple"
+          titulo="Cuando Buenaventura te quede chico"
+          frase="Hoy operas en una ciudad. Cuando tengas repartidores en otra, abres la sede y arranca con su propia cobertura."
+          puntos={[{ i: 'add_business', t: 'Abrir ciudad', s: 'Cali, Tumaco, la que sea' }, { i: 'map', t: 'Su cobertura', s: 'Cada sede con su radio' }, { i: 'groups', t: 'Su equipo', s: 'Los repartidores quedan por sede' }]}
+        />
+
 
       {nueva && <NuevaSede isDemo={isDemo} setBranches={setBranches} onClose={() => setNueva(false)} onCreated={() => { setNueva(false); if (!isDemo) reload(); }} />}
 

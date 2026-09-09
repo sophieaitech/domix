@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import { Icon, Card, Overline, Button, Chip, Switch } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
 import { money, etaMinutes } from '../../lib/pricing';
@@ -47,6 +48,14 @@ export default function TurboPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="turbo"
+          tono="orange"
+          titulo="El servicio que te deja más"
+          frase="Turbo es para lo que no puede esperar: una autorización que se vence, un documento que cierra un negocio. Cobra más porque vale más."
+          puntos={[{ i: 'bolt', t: 'Primero en la fila', s: 'Se ofrece antes que los demás' }, { i: 'timer', t: 'Menos de 20 min', s: 'Una promesa que se puede cumplir' }, { i: 'attach_money', t: 'Su recargo', s: 'Tú decides cuánto suma' }]}
+        />
+
 
       {/* Portada de marca */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--sh-xl)', padding: 30, color: '#fff', background: 'linear-gradient(135deg,#2E7BC4 0%,#1B4F8F 45%,#0F2E52 100%)', boxShadow: 'var(--elev-4)' }}>

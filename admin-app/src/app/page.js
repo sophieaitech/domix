@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import TopBar from '../components/TopBar';
+import GuiaSeccion from '../components/GuiaSeccion';
 import MapView from '../components/MapView';
 import { Icon, Card, CardTitle, Kpi, Pill, Button, QueueRow, MixBar, Spinner } from '../components/ui';
 import { useOps } from '../context/OpsProvider';
@@ -101,6 +102,18 @@ export default function DashboardPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="dashboard"
+          tono="green"
+          titulo="El pulso del día, de un vistazo"
+          frase="Estas cifras son de hoy y se mueven solas. Si algo se está atascando, la Cola de aprobación te lo dice antes de que un cliente reclame."
+          puntos={[
+            { i: 'payments', t: 'Cuánto llevas', s: 'Facturado y ticket promedio' },
+            { i: 'timer', t: 'Qué tan rápido', s: 'Minutos hasta asignar repartidor' },
+            { i: 'pending_actions', t: 'Qué te falta', s: 'Lo que espera decisión tuya' },
+          ]}
+        />
+
 
         {/* Indicadores del día */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(186px,1fr))', gap: 14, marginBottom: 16 }}>

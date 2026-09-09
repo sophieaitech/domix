@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import MapView from '../../components/MapView';
 import { Icon, Card, Overline, Button, Chip, Field, Spinner, EmptyState } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
@@ -317,6 +318,14 @@ function PedidosContent() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="pedidos"
+          tono="orange"
+          titulo="Aquí no se pierde ni un pedido"
+          frase="Todo lo que entra —por la app, por WhatsApp o cargado a mano— cae en este tablero y avanza de columna hasta la entrega."
+          puntos={[{ i: 'add_alert', t: 'Sin asignar', s: 'Elige el repartidor y sale' }, { i: 'drag_indicator', t: 'Por columnas', s: 'Sigues cada etapa de un vistazo' }, { i: 'schedule', t: 'Demorados', s: 'Los que llevan mucho esperando se marcan solos' }]}
+        />
+
 
       {nuevo && <NuevoPedido rules={effectiveRules} onClose={() => setNuevo(false)} onCreate={createRequest} />}
 

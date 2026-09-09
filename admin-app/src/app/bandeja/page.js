@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import { Icon, Card, Button, Pill, Spinner, EmptyState } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
 import { useAppMode } from '../../context/AppModeProvider';
@@ -231,6 +232,14 @@ export default function BandejaPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="bandeja"
+          tono="green"
+          titulo="WhatsApp sin copiar y pegar"
+          frase="Los mensajes de tus clientes llegan aquí. La IA lee el chat y arma el pedido; tú solo confirmas."
+          puntos={[{ i: 'auto_awesome', t: 'Lee el chat', s: 'Saca direcciones, servicio y urgencia' }, { i: 'help', t: 'Qué falta', s: 'Te dice qué preguntarle al cliente' }, { i: 'send', t: 'Respuesta lista', s: 'Redactada, para enviar de una' }]}
+        />
+
         {loading && <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spinner /></div>}
 
         {!loading && convs.length === 0 && (

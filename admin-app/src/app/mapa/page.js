@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import MapView from '../../components/MapView';
 import { Icon, Card, Overline, Chip, Button } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
@@ -35,6 +36,14 @@ export default function MapaPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="mapa"
+          tono="navy"
+          titulo="Tu flota, en tiempo real"
+          frase="Cada moto en el mapa es un repartidor de verdad. Verde está libre, azul va en una entrega, gris está desconectado."
+          puntos={[{ i: 'two_wheeler', t: 'Quién está cerca', s: 'Para asignar al más próximo' }, { i: 'radio_button_checked', t: 'Tu cobertura', s: 'El círculo marca hasta dónde llegas' }, { i: 'update', t: 'Se refresca solo', s: 'Sin recargar la página' }]}
+        />
+
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 330px', gap: 16, alignItems: 'start' }}>
         <Card style={{ padding: 0, overflow: 'hidden' }}>

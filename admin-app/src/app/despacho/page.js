@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import TopBar from '../../components/TopBar';
+import GuiaSeccion from '../../components/GuiaSeccion';
 import { Icon, Card, HeroCard, Overline, Button, Chip, Switch } from '../../components/ui';
 import { useOps } from '../../context/OpsProvider';
 import { SERVICE_LABELS } from '../../lib/ops';
@@ -65,6 +66,14 @@ export default function DespachoPage() {
       />
 
       <div className="dx-content sb" style={{ animation: 'trFade .3s ease' }}>
+        <GuiaSeccion
+          id="despacho"
+          tono="amber"
+          titulo="Aquí se define cuánto cobras"
+          frase="La tarifa que ve el cliente sale de estas reglas. Cámbialas y el precio cambia al instante, sin tocar código."
+          puntos={[{ i: 'payments', t: 'Base y kilómetro', s: 'El piso y lo que suma la distancia' }, { i: 'trending_up', t: 'Por demanda', s: 'Sube solo cuando hay más pedidos que motos' }, { i: 'calculate', t: 'Simulador', s: 'Pruebas el precio antes de guardarlo' }]}
+        />
+
 
       <HeroCard glow="orange" style={{ padding: 22, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
