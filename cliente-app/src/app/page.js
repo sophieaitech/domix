@@ -15,26 +15,26 @@ const WHATSAPP = 'https://wa.me/573157924906';
 
 /* Las dos formas de pedir: enviar algo, o que te traigan algo. */
 const TABS = [
-  { id: 'enviar', label: 'Enviar', img: '/assets/svc-envio.png' },
-  { id: 'traer', label: 'Que me traigan', img: '/assets/svc-moto.png' },
+  { id: 'enviar', label: 'Enviar', img: '/assets/svc-envio.webp' },
+  { id: 'traer', label: 'Que me traigan', img: '/assets/svc-moto.webp' },
 ];
 
 /* "Para ti" muestra los cinco servicios de Domix, en el mismo orden y con
    los mismos nombres del flyer. La fila se desliza, así que caben todos. */
 const PARA_TI = {
   enviar: [
-    { name: 'Mensajería', img: '/assets/svc-moto.png', tipo: 'mensajeria' },
-    { name: 'Autorizaciones médicas', img: '/assets/svc-hora.png', tipo: 'autorizacion_medica' },
-    { name: 'Encomiendas', img: '/assets/svc-envio.png', tipo: 'encomienda' },
-    { name: 'Domicilios', img: '/assets/svc-carro.png', tipo: 'domicilio' },
-    { name: 'Mandados', img: '/assets/svc-reserva.png', tipo: 'mandado' },
+    { name: 'Mensajería', img: '/assets/svc-moto.webp', tipo: 'mensajeria' },
+    { name: 'Autorizaciones médicas', img: '/assets/svc-hora.webp', tipo: 'autorizacion_medica' },
+    { name: 'Encomiendas', img: '/assets/svc-envio.webp', tipo: 'encomienda' },
+    { name: 'Domicilios', img: '/assets/svc-carro.webp', tipo: 'domicilio' },
+    { name: 'Mandados', img: '/assets/svc-reserva.webp', tipo: 'mandado' },
   ],
   traer: [
-    { name: 'Domicilios', img: '/assets/svc-carro.png', tipo: 'domicilio' },
-    { name: 'Mandados', img: '/assets/svc-reserva.png', tipo: 'mandado' },
-    { name: 'Encomiendas', img: '/assets/svc-envio.png', tipo: 'encomienda' },
-    { name: 'Mensajería', img: '/assets/svc-moto.png', tipo: 'mensajeria' },
-    { name: 'Turbo', img: '/assets/svc-hora.png', tipo: 'domicilio', turbo: true },
+    { name: 'Domicilios', img: '/assets/svc-carro.webp', tipo: 'domicilio' },
+    { name: 'Mandados', img: '/assets/svc-reserva.webp', tipo: 'mandado' },
+    { name: 'Encomiendas', img: '/assets/svc-envio.webp', tipo: 'encomienda' },
+    { name: 'Mensajería', img: '/assets/svc-moto.webp', tipo: 'mensajeria' },
+    { name: 'Turbo', img: '/assets/svc-hora.webp', tipo: 'domicilio', turbo: true },
   ],
 };
 

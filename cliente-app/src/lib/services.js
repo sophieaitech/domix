@@ -3,11 +3,11 @@ import { pointAlong } from './geo';
 
 /* Los cinco servicios de Domix, con los textos de la papelería de marca. */
 export const SERVICES = [
-  { value: 'mensajeria', label: 'Mensajería', desc: 'Envíos de documentos, cartas y correspondencia', icon: 'mail', img: '/assets/svc-moto.png', from: 6000 },
-  { value: 'autorizacion_medica', label: 'Autorizaciones médicas', desc: 'Trámites rápidos y seguros en EPS y clínicas', icon: 'medical_information', img: '/assets/svc-hora.png', from: 8000 },
-  { value: 'encomienda', label: 'Encomiendas', desc: 'Envío de paquetes y mercancías a nivel local', icon: 'inventory_2', img: '/assets/svc-envio.png', from: 8000 },
-  { value: 'domicilio', label: 'Domicilios', desc: 'Restaurantes, tiendas virtuales, maquillaje y más', icon: 'moped', img: '/assets/svc-carro.png', from: 6000 },
-  { value: 'mandado', label: 'Mandados', desc: 'Compras, pagos, recados y diligencias varias', icon: 'shopping_bag', img: '/assets/svc-reserva.png', from: 7000 },
+  { value: 'mensajeria', label: 'Mensajería', desc: 'Envíos de documentos, cartas y correspondencia', icon: 'mail', img: '/assets/svc-moto.webp', from: 6000 },
+  { value: 'autorizacion_medica', label: 'Autorizaciones médicas', desc: 'Trámites rápidos y seguros en EPS y clínicas', icon: 'medical_information', img: '/assets/svc-hora.webp', from: 8000 },
+  { value: 'encomienda', label: 'Encomiendas', desc: 'Envío de paquetes y mercancías a nivel local', icon: 'inventory_2', img: '/assets/svc-envio.webp', from: 8000 },
+  { value: 'domicilio', label: 'Domicilios', desc: 'Restaurantes, tiendas virtuales, maquillaje y más', icon: 'moped', img: '/assets/svc-carro.webp', from: 6000 },
+  { value: 'mandado', label: 'Mandados', desc: 'Compras, pagos, recados y diligencias varias', icon: 'shopping_bag', img: '/assets/svc-reserva.webp', from: 7000 },
 ];
 
 /* Promesa para negocios: "Nosotros somos tu domiciliario". */

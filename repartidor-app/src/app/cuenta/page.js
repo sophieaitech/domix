@@ -12,8 +12,9 @@ import ThemeToggle from '../../components/ThemeToggle';
 import HojaDocumento from '../../components/HojaDocumento';
 import HojaVehiculo from '../../components/HojaVehiculo';
 import HojaCuentaRetiro from '../../components/HojaCuentaRetiro';
+import HojaPreferencias from '../../components/HojaPreferencias';
 import { DEMO_DOCS, DEMO_VEHICLE } from '../../lib/demo';
-import { DOCS, DOC_STATUS, VEHICULOS, METODOS_RETIRO, fetchDocumentos, fetchVehiculo } from '../../lib/cuenta';
+import { DOCS, DOC_STATUS, VEHICULOS, METODOS_RETIRO, HORARIOS, fetchDocumentos, fetchVehiculo, enlaceSoporte } from '../../lib/cuenta';
 
 function CuentaContent() {
   const { profile, courierProfile, signOut } = useCourierSession();
@@ -57,6 +58,17 @@ function CuentaContent() {
     ? `${METODOS_RETIRO.find((m) => m.id === perfil.payout_method)?.label || ''} ${perfil.payout_account}`.trim()
     : 'Sin registrar';
 
+  const horarioLabel = perfil?.preferred_schedule
+    ? (HORARIOS.find((h) => h.id === perfil.preferred_schedule)?.id || perfil.preferred_schedule)
+    : 'Sin definir';
+
+  /* Soporte abre WhatsApp con el mensaje ya escrito: el repartidor no
+     debería tener que explicar quién es cada vez que escribe. */
+  const abrirSoporte = () => {
+    const nombre = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
+    window.open(enlaceSoporte(perfil, nombre), '_blank', 'noopener');
+  };
+
   /* En demo no se escribe nada en la base: se avisa en vez de fallar. */
   const abrir = (cual) => {
     if (isDemo) return;
@@ -66,9 +78,9 @@ function CuentaContent() {
   const rows = [
     { icon: 'two_wheeler', label: 'Mi vehículo', value: vehLabel, falta: !vehicle, onClick: () => abrir('vehiculo') },
     { icon: 'account_balance', label: 'Cuenta para retiros', value: cuentaLabel, falta: !perfil?.payout_account, onClick: () => abrir('retiro') },
-    { icon: 'map', label: 'Zona de trabajo', value: perfil?.work_zone || 'Centro' },
-    { icon: 'schedule', label: 'Horario preferido', value: perfil?.preferred_schedule || 'Sin definir' },
-    { icon: 'support_agent', label: 'Ayuda y soporte', value: '' },
+    { icon: 'map', label: 'Zona de trabajo', value: perfil?.work_zone || 'Centro', onClick: () => abrir('preferencias') },
+    { icon: 'schedule', label: 'Horario preferido', value: horarioLabel, falta: !perfil?.preferred_schedule, onClick: () => abrir('preferencias') },
+    { icon: 'support_agent', label: 'Ayuda y soporte', value: 'WhatsApp', onClick: abrirSoporte },
   ];
 
   return (
@@ -233,6 +245,14 @@ function CuentaContent() {
         courierId={courierId}
         onClose={() => setHoja(null)}
         onGuardado={setVehicle}
+      />
+
+      <HojaPreferencias
+        abierta={hoja === 'preferencias'}
+        perfil={perfil}
+        courierId={courierId}
+        onClose={() => setHoja(null)}
+        onGuardado={setPerfil}
       />
 
       <HojaCuentaRetiro

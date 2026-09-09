@@ -68,7 +68,7 @@ export default function EntrarPage() {
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 22 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/domix-logo-dark-sm.png" alt="Domix" width={44} height={44} style={{ width: 44, height: 44, objectFit: 'contain' }} />
+          <img src="/assets/domix-logo-dark-sm.webp" alt="Domix" width={44} height={44} style={{ width: 44, height: 44, objectFit: 'contain' }} />
           <span style={{ font: '600 9px Manrope,sans-serif', letterSpacing: '.12em', color: 'rgba(255,255,255,.5)' }}>
             MENSAJERÍA &amp; LOGÍSTICA
           </span>

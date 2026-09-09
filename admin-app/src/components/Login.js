@@ -11,7 +11,7 @@ export default function Login({
   rolesPermitidos,
   onEntrar,
   acento = '#2F7A24',
-  logo = '/assets/domix-logo-dark-sm.png',
+  logo = '/assets/domix-logo-dark-sm.webp',
 }) {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');

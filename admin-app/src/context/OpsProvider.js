@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAppMode } from './AppModeProvider';
 import { buildDemoData, DEMO_COURIERS, makeIncomingRequest } from '../lib/demo';
 import { HOME_BRANCH } from '../lib/cities';
@@ -15,6 +15,8 @@ const RULES_KEY = 'domix_rules';
 export function OpsProvider({ children }) {
   const { isDemo, ready } = useAppMode();
   const [porResolver, setPorResolver] = useState(0);
+  const recargaPendiente = useRef(null);
+  const flotaRef = useRef([]);
 
   const [requests, setRequests] = useState([]);
   const [couriers, setCouriers] = useState([]);
@@ -67,9 +69,24 @@ export function OpsProvider({ children }) {
     }
     setLoading(true);
     loadLive();
+
+    /* Los avisos en vivo llegan en ráfagas: cada repartidor en la calle
+       escribe su posición varias veces por minuto, y antes cada una de
+       esas escrituras disparaba una recarga completa del panel. Con la
+       flota trabajando eso eran varias recargas por segundo, cada una
+       de cuatro consultas. Aquí se juntan: pase lo que pase, se recarga
+       una vez cada medio segundo como mucho. */
+    const programarRecarga = () => {
+      if (recargaPendiente.current) return;
+      recargaPendiente.current = setTimeout(() => {
+        recargaPendiente.current = null;
+        loadLive();
+      }, 500);
+    };
+
     const stop = subscribeOps({
       onRequest: (payload) => {
-        loadLive();
+        programarRecarga();
         if (payload.eventType === 'INSERT') {
           const r = payload.new;
           pushNotify('Nuevo pedido en Domix', {
@@ -78,10 +95,41 @@ export function OpsProvider({ children }) {
           });
         }
       },
-      onCourier: () => loadLive(),
+
+      /* Si lo único que cambió es dónde está el repartidor, se mueve el
+         punto en el mapa y ya: no hace falta volver a bajar los pedidos,
+         las sedes ni los pendientes.
+
+         La comparación se hace contra lo que ya está en pantalla y no
+         contra payload.old, porque Supabase solo manda la fila anterior
+         si la tabla está en REPLICA IDENTITY FULL; sin eso llega vacía
+         y esta rama no se tomaría nunca. */
+      onCourier: (payload) => {
+        const ahora = payload.new || {};
+        const antes = flotaRef.current.find((c) => c.id === ahora.id);
+
+        const soloPosicion = payload.eventType === 'UPDATE'
+          && antes
+          && antes.status === ahora.status
+          && antes.branch_id === ahora.branch_id;
+
+        if (soloPosicion) {
+          setCouriers((filas) => filas.map((c) => (c.id === ahora.id
+            ? { ...c, lat: ahora.last_lat, lon: ahora.last_lon } : c)));
+          return;
+        }
+        programarRecarga();
+      },
     });
-    const t = setInterval(loadLive, 20000);
-    return () => { stop(); clearInterval(t); };
+
+    /* Red de seguridad por si se pierde algún aviso. Con el tiempo real
+       funcionando no hace falta más seguido. */
+    const t = setInterval(loadLive, 60000);
+    return () => {
+      stop();
+      clearInterval(t);
+      if (recargaPendiente.current) clearTimeout(recargaPendiente.current);
+    };
   }, [isDemo, ready, loadLive]);
 
   /* ---------- Acciones ---------- */
@@ -131,6 +179,10 @@ export function OpsProvider({ children }) {
   const online = couriers.filter((c) => c.status === 'online').length;
   const busy = couriers.filter((c) => c.status === 'busy').length;
   const pending = requests.filter((r) => r.status === 'requested').length;
+  /* Espejo de la flota para poder comparar dentro de los avisos en vivo
+     sin volver a suscribirse cada vez que cambia. */
+  flotaRef.current = couriers;
+
   const suggestedSurge = autoSurgeFor({ online, busy, pending });
   const effectiveRules = { ...rules, surge: rules.autoSurge ? suggestedSurge : rules.surge };
 

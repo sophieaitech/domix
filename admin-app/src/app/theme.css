@@ -99,6 +99,7 @@
 html,body{height:100%}
 body{
   font-family:Manrope,-apple-system,'Helvetica Neue',Helvetica,sans-serif;
+  font-weight:500;                 /* la base: ya no se pide el peso 400 */
   letter-spacing:-.01em;
   background:var(--sf);
   color:var(--tx);

@@ -156,3 +156,37 @@ export const ESTADO_RETIRO = {
 function limpiarError(msg = '') {
   return msg.replace(/^.*?(?:ERROR|error):\s*/, '').trim() || 'Algo salió mal. Intenta de nuevo.';
 }
+
+/* ---------- Zona y horario ---------- */
+
+/* Los barrios donde Domix opera hoy. Salen del listado local de
+   Buenaventura, no de un mapa mundial: el repartidor elige de una
+   lista corta y conocida en vez de escribir. */
+export const ZONAS = [
+  'Centro', 'Pueblo Nuevo', 'El Piñal', 'La Playita', 'Juan XXIII',
+  'Bellavista', 'La Independencia', 'Isla Cascajal', 'El Pailón',
+];
+
+export const HORARIOS = [
+  { id: 'Mañana', icon: 'wb_twilight', pista: '6:00 a. m. a 12:00 m.' },
+  { id: 'Tarde', icon: 'wb_sunny', pista: '12:00 m. a 6:00 p. m.' },
+  { id: 'Noche', icon: 'bedtime', pista: '6:00 p. m. a 11:00 p. m.' },
+  { id: 'Todo el día', icon: 'schedule', pista: 'Sin preferencia de horario' },
+];
+
+export async function guardarPreferencias(courierId, zona, horario) {
+  const { data, error } = await supabase.rpc('guardar_preferencias', {
+    p_courier_id: courierId,
+    p_zona: zona,
+    p_horario: horario || null,
+  });
+  if (error) return { ok: false, mensaje: limpiarError(error.message) };
+  return { ok: true, perfil: Array.isArray(data) ? data[0] : data };
+}
+
+/* El WhatsApp de la empresa, con el mensaje ya escrito para que el
+   repartidor no tenga que explicar quién es. */
+export function enlaceSoporte(perfil, nombre) {
+  const texto = `Hola, soy ${nombre || 'un repartidor'} de Domix. Necesito ayuda con`;
+  return `https://wa.me/573157924906?text=${encodeURIComponent(texto)}`;
+}

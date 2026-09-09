@@ -118,6 +118,7 @@
 html,body{margin:0;padding:0;height:100%}
 body{
   font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  font-weight:500;                 /* la base: ya no se pide el peso 400 */
   color:var(--on-surface);
   background:var(--surface-dim);
   -webkit-font-smoothing:antialiased;

@@ -80,7 +80,7 @@ export default function Splash() {
               sobre el negro y el naranja de la caja siga siendo el acento. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/assets/domix-logo-dark-sm.png"
+            src="/assets/domix-logo-dark-sm.webp"
             alt="Domix"
             width={160}
             height={160}
