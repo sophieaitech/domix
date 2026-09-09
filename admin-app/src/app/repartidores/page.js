@@ -37,7 +37,7 @@ function NuevoRepartidor({ onCreated, onClose, branches, isDemo, setCouriers }) 
     <Card elevation={3} style={{ padding: 20, marginBottom: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>Registrar repartidor</span>
-        <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button aria-label="Cerrar" onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="close" size={19} />
         </button>
       </div>

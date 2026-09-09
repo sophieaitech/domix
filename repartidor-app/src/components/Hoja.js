@@ -41,7 +41,7 @@ export default function Hoja({ abierta, titulo, sub, onClose, children, pie }) {
             <span className="dsp" style={{ display: 'block', font: '800 20px Manrope,sans-serif', letterSpacing: '-.03em' }}>{titulo}</span>
             {sub && <span style={{ display: 'block', fontSize: 12.5, color: 'var(--on-surface-variant)', marginTop: 3, lineHeight: 1.45 }}>{sub}</span>}
           </span>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
             style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
           >

@@ -149,7 +149,7 @@ export function EmptyState({ icon, title, body, action }) {
 export function TopBack({ title, onBack, right }) {
   return (
     <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 13, padding: '10px 16px 14px' }}>
-      <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+      <button aria-label="Volver" onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
         <Icon name="arrow_back" size={20} />
       </button>
       <div style={{ flex: 1, minWidth: 0, font: '800 21px Manrope,sans-serif', letterSpacing: '-.03em' }}>{title}</div>

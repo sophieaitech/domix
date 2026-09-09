@@ -41,7 +41,7 @@ function Consignar({ retiro, onClose, onListo }) {
               {METODOS[retiro.method] || retiro.method || 'Cuenta'} · {retiro.account}
             </span>
           </span>
-          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <button aria-label="Cerrar" onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
             <Icon name="close" size={18} color="var(--mu)" />
           </button>
         </div>
@@ -114,7 +114,7 @@ function RevisarDoc({ doc, nombre, onClose, onListo }) {
               {nombre} · subida {haceCuanto(doc.uploaded_at || doc.created_at)}
             </span>
           </span>
-          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+          <button aria-label="Cerrar" onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
             <Icon name="close" size={18} color="var(--mu)" />
           </button>
         </div>

@@ -54,7 +54,7 @@ export default function PinEntrega({ request, onClose, onConfirmado }) {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 200, background: 'var(--surface)', display: 'flex', flexDirection: 'column', animation: 'dxSlideUp .26s var(--ease-out)' }}>
       <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-        <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button aria-label="Cerrar" onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="close" size={20} />
         </button>
         <div style={{ flex: 1, font: '800 18px Manrope,sans-serif', letterSpacing: '-.03em' }}>Confirmar entrega</div>

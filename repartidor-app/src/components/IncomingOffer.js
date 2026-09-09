@@ -122,7 +122,7 @@ export default function IncomingOffer({ request, onAccept, onExpire, onReject })
       </div>
 
       <div style={{ flex: 'none', display: 'flex', gap: 11, padding: '14px 20px 18px', borderTop: '1px solid var(--outline-variant)', background: 'var(--surface-lowest)' }}>
-        <button
+        <button aria-label="Cerrar"
           onClick={onReject}
           style={{ flex: 'none', width: 60, height: 54, borderRadius: 'var(--sh-md)', border: '1px solid var(--outline)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >

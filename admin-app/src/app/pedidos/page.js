@@ -149,7 +149,7 @@ function OrderDrawer({ req, couriers, onClose, onAdvance }) {
               <Overline style={{ color: 'rgba(255,255,255,.6)' }}>{SERVICE_LABELS[req.service_type]}</Overline>
               <div className="dsp" style={{ fontWeight: 800, fontSize: 26, marginTop: 5, letterSpacing: '.04em' }}>#{req.tracking_code}</div>
             </div>
-            <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button aria-label="Cerrar" onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="close" size={20} color="#fff" />
             </button>
           </div>
@@ -269,7 +269,7 @@ function NuevoPedido({ onClose, onCreate, rules }) {
     <Card elevation={3} style={{ padding: 20, marginBottom: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <span className="dsp" style={{ fontWeight: 800, fontSize: 18 }}>Nuevo pedido</span>
-        <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button aria-label="Cerrar" onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="close" size={19} />
         </button>
       </div>

@@ -82,7 +82,7 @@ export default function MarcarEnMapa({ titulo, inicial, onConfirmar, onCerrar })
   return createPortal(
     <div style={{ position: 'absolute', inset: 0, zIndex: 300, background: 'var(--bg)', display: 'flex', flexDirection: 'column', animation: 'trUpS .26s cubic-bezier(.2,.8,.2,1)' }}>
       <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-        <button onClick={onCerrar} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button aria-label="Volver" onClick={onCerrar} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="arrow_back" size={20} />
         </button>
         <div style={{ flex: 1, font: '800 17px Manrope,sans-serif', letterSpacing: '-.03em' }}>{titulo}</div>
