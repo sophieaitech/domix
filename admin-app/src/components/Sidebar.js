@@ -11,6 +11,7 @@ const NAV = [
       { label: 'Dashboard', path: '/', icon: 'dashboard' },
       { label: 'Pedidos en vivo', path: '/pedidos', icon: 'receipt_long', badge: 'pending' },
       { label: 'Mapa en vivo', path: '/mapa', icon: 'explore' },
+      { label: 'Bandeja WhatsApp', path: '/bandeja', icon: 'chat', tag: 'IA' },
     ],
   },
   {
