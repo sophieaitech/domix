@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon, Spinner } from './ui';
 import MarcarEnMapa from './MarcarEnMapa';
 import { searchAddress, currentPosition, reverseGeocode } from '../lib/geo';
+import { buscarLugaresLocales } from '../lib/lugares';
+import { leerRecientes, guardarReciente } from '../lib/recientes';
 
 /* Campo de dirección con autocompletado de OpenStreetMap y botón
    "usar mi ubicación". Devuelve texto + coordenadas para calcular tarifa. */
@@ -14,18 +16,31 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
   const [marcando, setMarcando] = useState(false);
+  const [recientes, setRecientes] = useState([]);
+
+  useEffect(() => { setRecientes(leerRecientes()); }, []);
   const timer = useRef(null);
   const controller = useRef(null);
 
   useEffect(() => { setText(value || ''); }, [value]);
 
+  /* Dos velocidades: el listado local de Buenaventura aparece con la
+     primera letra, sin esperar nada; la búsqueda en el mapa, que sí sale
+     a internet, va detrás con una pausa corta. Así la app responde de
+     inmediato aunque la señal esté lenta. */
   const handleType = (e) => {
     const v = e.target.value;
     setText(v);
     onChange({ address: v, point: null });
     clearTimeout(timer.current);
     controller.current?.abort();
-    if (v.trim().length < 3) return setItems([]);
+
+    const locales = buscarLugaresLocales(v);
+    setItems(locales);
+    setOpen(locales.length > 0);
+
+    if (v.trim().length < 3) return setBusy(false);
+
     setBusy(true);
     timer.current = setTimeout(async () => {
       controller.current = new AbortController();
@@ -33,7 +48,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
       setItems(res);
       setOpen(true);
       setBusy(false);
-    }, 450);
+    }, 260);
   };
 
   const choose = (item) => {
@@ -47,12 +62,14 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
     }
     setText(item.label);
     onChange({ address: item.label, point: { lat: item.lat, lon: item.lon } });
+    guardarReciente({ address: item.label, point: { lat: item.lat, lon: item.lon } });
   };
 
   const confirmarPin = ({ address, point: p }) => {
     setMarcando(false);
     setText(address);
     onChange({ address, point: p });
+    guardarReciente({ address, point: p });
   };
 
   const locate = async () => {
@@ -88,7 +105,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
           required={required}
           value={text}
           onChange={handleType}
-          onFocus={() => items.length && setOpen(true)}
+          onFocus={() => { if (items.length) return setOpen(true); if (!text.trim() && recientes.length) { setItems(recientes.map((d) => ({ label: d.address, lat: d.point.lat, lon: d.point.lon, reciente: true }))); setOpen(true); } }}
           placeholder={placeholder}
           style={{ flex: 1, fontSize: 14.5, fontWeight: 600 }}
         />
@@ -126,7 +143,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', textAlign: 'left', borderTop: i ? '1px solid var(--outline-variant)' : 'none', background: 'transparent' }}
             >
               <Icon
-                name={it.requierePin ? 'add_location_alt' : 'location_on'}
+                name={it.reciente ? 'history' : it.requierePin ? 'add_location_alt' : 'location_on'}
                 size={17}
                 color={it.local ? 'var(--secondary)' : 'var(--on-surface-variant)'}
                 fill={it.local}
