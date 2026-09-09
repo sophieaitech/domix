@@ -11,7 +11,7 @@ const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTR = '&copy; OpenStreetMap';
 
 let loader = null;
-function loadLeaflet() {
+export function loadLeaflet() {
   if (typeof window === 'undefined') return Promise.reject(new Error('sin ventana'));
   if (window.L) return Promise.resolve(window.L);
   if (loader) return loader;

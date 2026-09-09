@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon, Spinner } from './ui';
+import MarcarEnMapa from './MarcarEnMapa';
 import { searchAddress, currentPosition, reverseGeocode } from '../lib/geo';
 
 /* Campo de dirección con autocompletado de OpenStreetMap y botón
@@ -12,6 +13,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [marcando, setMarcando] = useState(false);
   const timer = useRef(null);
   const controller = useRef(null);
 
@@ -35,10 +37,22 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
   };
 
   const choose = (item) => {
-    setText(item.label);
     setItems([]);
     setOpen(false);
+    // Barrio que OpenStreetMap no conoce: el cliente marca el punto exacto
+    // en vez de que le asignemos un centro aproximado.
+    if (item.requierePin || item.lat == null) {
+      setText(item.label);
+      return setMarcando(true);
+    }
+    setText(item.label);
     onChange({ address: item.label, point: { lat: item.lat, lon: item.lon } });
+  };
+
+  const confirmarPin = ({ address, point: p }) => {
+    setMarcando(false);
+    setText(address);
+    onChange({ address, point: p });
   };
 
   const locate = async () => {
@@ -82,6 +96,26 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
         {point && !busy && <Icon name="check_circle" size={18} fill color="var(--secondary)" />}
       </span>
 
+      {text.trim().length >= 3 && !point && !busy && (
+        <button
+          type="button"
+          onClick={() => setMarcando(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7, fontSize: 11.5, fontWeight: 800, color: 'var(--secondary)' }}
+        >
+          <Icon name="add_location_alt" size={15} fill />
+          No aparece mi dirección, marcarla en el mapa
+        </button>
+      )}
+
+      {marcando && (
+        <MarcarEnMapa
+          titulo={label || 'Marcar dirección'}
+          inicial={point}
+          onConfirmar={confirmarPin}
+          onCerrar={() => setMarcando(false)}
+        />
+      )}
+
       {open && items.length > 0 && (
         <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 6, zIndex: 60, borderRadius: 'var(--sh-md)', background: 'var(--surface-lowest)', border: '1px solid var(--outline-variant)', boxShadow: 'var(--elev-3)', overflow: 'hidden', animation: 'dxDrop .16s var(--ease-out)' }}>
           {items.map((it, i) => (
@@ -91,8 +125,20 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
               onClick={() => choose(it)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', textAlign: 'left', borderTop: i ? '1px solid var(--outline-variant)' : 'none', background: 'transparent' }}
             >
-              <Icon name="location_on" size={17} color="var(--on-surface-variant)" />
-              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 600, lineHeight: 1.35 }}>{it.label}</span>
+              <Icon
+                name={it.requierePin ? 'add_location_alt' : 'location_on'}
+                size={17}
+                color={it.local ? 'var(--secondary)' : 'var(--on-surface-variant)'}
+                fill={it.local}
+              />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, lineHeight: 1.35 }}>{it.label}</span>
+                {it.requierePin && (
+                  <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--secondary)', marginTop: 2 }}>
+                    Marca el punto en el mapa
+                  </span>
+                )}
+              </span>
             </button>
           ))}
         </div>

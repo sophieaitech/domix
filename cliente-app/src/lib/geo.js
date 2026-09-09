@@ -7,6 +7,8 @@
 
 export const BUENAVENTURA = { lat: 3.8801, lon: -77.0312, label: 'Buenaventura, Valle del Cauca' };
 
+import { buscarLugaresLocales } from './lugares';
+
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
 const OSRM = 'https://router.project-osrm.org';
 
@@ -21,25 +23,39 @@ export function haversineKm(a, b) {
   return +(2 * R * Math.asin(Math.sqrt(h))).toFixed(2);
 }
 
-/* Sugerencias de dirección mientras el usuario escribe (limitado a Buenaventura). */
+/* Sugerencias de dirección mientras el usuario escribe.
+   Primero el listado local de Buenaventura (instantáneo y siempre
+   disponible), después lo que encuentre OpenStreetMap. El listado local
+   existe porque OSM no tiene mapeada toda la ciudad. */
 export async function searchAddress(query, { signal } = {}) {
   const q = (query || '').trim();
-  if (q.length < 3) return [];
+  if (q.length < 2) return [];
+
+  const locales = buscarLugaresLocales(q);
+  if (q.length < 3) return locales;
+
   const url = `${NOMINATIM}/search?format=jsonv2&limit=5&countrycodes=co&addressdetails=1`
     + `&viewbox=-77.20,3.98,-76.88,3.78&bounded=1&q=${encodeURIComponent(q + ', Buenaventura')}`;
+
+  let remotos = [];
   try {
     const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return rows.map((r) => ({
-      label: shortLabel(r.display_name),
-      full: r.display_name,
-      lat: Number(r.lat),
-      lon: Number(r.lon),
-    }));
+    if (res.ok) {
+      const rows = await res.json();
+      remotos = rows.map((r) => ({
+        label: shortLabel(r.display_name),
+        full: r.display_name,
+        lat: Number(r.lat),
+        lon: Number(r.lon),
+      }));
+    }
   } catch {
-    return [];
+    // Sin red o búsqueda cancelada: quedan las sugerencias locales.
   }
+
+  // Se descartan los repetidos, dando prioridad a los locales.
+  const vistos = new Set(locales.map((l) => l.label.toLowerCase()));
+  return [...locales, ...remotos.filter((r) => !vistos.has(r.label.toLowerCase()))];
 }
 
 /* Dirección aproximada a partir de coordenadas (para "usar mi ubicación"). */
