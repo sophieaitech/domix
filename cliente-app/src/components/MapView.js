@@ -7,8 +7,19 @@ import { useEffect, useRef } from 'react';
 
 const CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 const JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+/* OpenStreetMap, que no pide clave ni cuota. Para el modo oscuro no se
+   cambia de proveedor: se le aplica un filtro a las teselas claras, así
+   el mapa acompaña el tema sin depender de un servicio de pago. */
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTR = '&copy; OpenStreetMap';
+
+function esOscuro() {
+  if (typeof document === 'undefined') return false;
+  const t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dark') return true;
+  if (t === 'light') return false;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
+}
 
 let loader = null;
 export function loadLeaflet() {
@@ -32,14 +43,23 @@ export function loadLeaflet() {
   return loader;
 }
 
-function pinIcon(L, { color, icon, pulse }) {
+/* Marcador con halo. El del repartidor late, para que se note que la
+   posición es de verdad y no una foto vieja. */
+function pinIcon(L, { color, icon, pulse, size = 34 }) {
+  const halo = pulse
+    ? `<span style="position:absolute;inset:-9px;border-radius:50%;background:${color};opacity:.22;animation:dxLate 1.9s ease-out infinite"></span>`
+    : '';
   return L.divIcon({
     className: '',
-    iconSize: [34, 34],
-    iconAnchor: [17, 17],
-    html: `<div style="width:34px;height:34px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;
-                       box-shadow:0 3px 12px rgba(20,16,10,.4);border:2.5px solid #fff;${pulse ? 'animation:dxPulse 2s infinite;' : ''}">
-             <span class="mi mi-fill" style="font-size:18px;color:#fff">${icon}</span>
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<div style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">
+             ${halo}
+             <span style="position:relative;width:${size}px;height:${size}px;border-radius:50%;background:${color};
+                          display:flex;align-items:center;justify-content:center;
+                          box-shadow:0 4px 14px rgba(10,10,10,.45);border:2.5px solid #fff">
+               <span class="mi mi-fill" style="font-size:${Math.round(size * 0.53)}px;color:#fff">${icon}</span>
+             </span>
            </div>`,
   });
 }
@@ -60,6 +80,18 @@ export default function MapView({
   const mapRef = useRef(null);
   const layersRef = useRef([]);
   const observerRef = useRef(null);
+  const tileRef = useRef(null);
+  const courierMarkerRef = useRef(null);
+
+  /* El mapa vive mientras la app cambia de claro a oscuro: se le
+     reemplazan las teselas en vez de volverlo a construir. */
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      nodeRef.current?.classList.toggle('dx-mapa-oscuro', esOscuro());
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +106,9 @@ export default function MapView({
         scrollWheelZoom: false,
         attributionControl: true,
       });
-      L.tileLayer(TILES, { attribution: ATTR, maxZoom: 19 }).addTo(map);
+      const capa = L.tileLayer(TILES, { attribution: ATTR, maxZoom: 19 }).addTo(map);
+      tileRef.current = capa;
+      nodeRef.current.classList.toggle('dx-mapa-oscuro', esOscuro());
       mapRef.current = map;
       draw();
 
@@ -108,8 +142,11 @@ export default function MapView({
 
     if (route?.length > 1) {
       const latlngs = route.map((p) => [p.lat, p.lon]);
-      add(L.polyline(latlngs, { color: '#17140F', weight: 5, opacity: .85, lineCap: 'round' }));
-      add(L.polyline(latlngs, { color: '#2F7A24', weight: 2, opacity: .9, dashArray: '1 10', lineCap: 'round' }));
+      const oscuro = esOscuro();
+      add(L.polyline(latlngs, { color: oscuro ? '#0a0a0a' : '#17140F', weight: 7, opacity: .28, lineCap: 'round' }));
+      add(L.polyline(latlngs, { color: oscuro ? '#f7f7f8' : '#17140F', weight: 4, opacity: .9, lineCap: 'round' }));
+      const guion = L.polyline(latlngs, { color: '#5FBF45', weight: 2.5, opacity: .95, dashArray: '2 12', lineCap: 'round', className: 'dx-ruta' });
+      add(guion);
       latlngs.forEach((p) => bounds.push(p));
     }
 

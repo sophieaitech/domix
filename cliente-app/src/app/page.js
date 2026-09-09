@@ -19,18 +19,22 @@ const TABS = [
   { id: 'traer', label: 'Que me traigan', img: '/assets/svc-moto.png' },
 ];
 
+/* "Para ti" muestra los cinco servicios de Domix, en el mismo orden y con
+   los mismos nombres del flyer. La fila se desliza, así que caben todos. */
 const PARA_TI = {
   enviar: [
-    { name: 'Enviar paquete', img: '/assets/svc-envio.png', tipo: 'encomienda' },
     { name: 'Mensajería', img: '/assets/svc-moto.png', tipo: 'mensajeria' },
-    { name: 'Autorización médica', img: '/assets/svc-hora.png', tipo: 'autorizacion_medica' },
-    { name: 'Programar', img: '/assets/svc-reserva.png', tipo: 'encomienda' },
+    { name: 'Autorizaciones médicas', img: '/assets/svc-hora.png', tipo: 'autorizacion_medica' },
+    { name: 'Encomiendas', img: '/assets/svc-envio.png', tipo: 'encomienda' },
+    { name: 'Domicilios', img: '/assets/svc-carro.png', tipo: 'domicilio' },
+    { name: 'Mandados', img: '/assets/svc-reserva.png', tipo: 'mandado' },
   ],
   traer: [
-    { name: 'Domicilio', img: '/assets/svc-moto.png', tipo: 'domicilio' },
-    { name: 'Mandado', img: '/assets/svc-carro.png', tipo: 'mandado' },
+    { name: 'Domicilios', img: '/assets/svc-carro.png', tipo: 'domicilio' },
+    { name: 'Mandados', img: '/assets/svc-reserva.png', tipo: 'mandado' },
+    { name: 'Encomiendas', img: '/assets/svc-envio.png', tipo: 'encomienda' },
+    { name: 'Mensajería', img: '/assets/svc-moto.png', tipo: 'mensajeria' },
     { name: 'Turbo', img: '/assets/svc-hora.png', tipo: 'domicilio', turbo: true },
-    { name: 'Programar', img: '/assets/svc-reserva.png', tipo: 'mandado' },
   ],
 };
 
@@ -117,6 +121,23 @@ export default function InicioPage() {
           </button>
         </div>
 
+        {/* Lo que Domix promete en su papelería, donde el cliente decide */}
+        <div className="sb" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 16px 20px' }}>
+          {[
+            { i: 'verified_user', t: 'Confiables', s: 'Tu envío en buenas manos' },
+            { i: 'bolt', t: 'Rápidos', s: 'Entregas oportunas' },
+            { i: 'location_on', t: 'Locales', s: 'Conocemos cada rincón' },
+          ].map((c) => (
+            <span key={c.t} style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 13px', borderRadius: 99, background: 'var(--sf)' }}>
+              <Icon name={c.i} size={16} fill color="var(--orange)" />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', font: '700 11.5px Manrope,sans-serif', whiteSpace: 'nowrap' }}>{c.t}</span>
+                <span style={{ display: 'block', font: '500 10px Manrope,sans-serif', color: 'var(--mu)', whiteSpace: 'nowrap' }}>{c.s}</span>
+              </span>
+            </span>
+          ))}
+        </div>
+
         {/* Pedido en curso */}
         {activo && (
           <div style={{ padding: '0 16px 20px' }}>
@@ -192,7 +213,7 @@ export default function InicioPage() {
             onClick={() => go('domicilio', true)}
             style={{ flex: 'none', width: 214, borderRadius: 16, overflow: 'hidden', background: 'var(--sf)', textAlign: 'left' }}
           >
-            <div style={{ height: 98, background: 'var(--navy)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ height: 98, background: 'var(--orange)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', left: -24, bottom: -34, width: 164, height: 164, borderRadius: '50%', border: '13px solid rgba(255,255,255,.15)' }} />
               <div style={{ position: 'absolute', right: 15, bottom: 14, font: '800 15px Manrope,sans-serif', color: '#fff', letterSpacing: '-.03em' }}>TURBO</div>
             </div>
@@ -213,8 +234,15 @@ export default function InicioPage() {
           </a>
         </div>
 
-        <div style={{ textAlign: 'center', font: '500 11px Manrope,sans-serif', color: 'var(--mu)', marginTop: 26 }}>
-          Domix · Mensajería &amp; Logística · Buenaventura
+        <div style={{ textAlign: 'center', marginTop: 30, padding: '0 24px' }}>
+          <div style={{ font: '800 15px/1.35 Manrope,sans-serif', letterSpacing: '-.02em' }}>
+            Enviamos confianza,<br />
+            <span style={{ color: 'var(--green)' }}>entregamos soluciones.</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, font: '500 11px Manrope,sans-serif', color: 'var(--mu)', marginTop: 10 }}>
+            <Icon name="location_on" size={13} fill />
+            Cobertura en Buenaventura y zonas aledañas
+          </div>
         </div>
       </div>
 

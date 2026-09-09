@@ -216,3 +216,15 @@ a{color:var(--primary);text-decoration:none}
 @media (max-width:639px){
   .dx-shell--bare{height:100dvh}
 }
+
+/* Mapa en vivo: halo que late bajo el marcador del repartidor y guion
+   que corre por la ruta, para que se vea movimiento real. */
+@keyframes dxLate{0%{transform:scale(.75);opacity:.32}70%{transform:scale(1.5);opacity:0}100%{transform:scale(1.5);opacity:0}}
+@keyframes dxRuta{to{stroke-dashoffset:-140}}
+.dx-ruta{animation:dxRuta 6s linear infinite}
+.leaflet-container{font-family:inherit;background:var(--sf)}
+.leaflet-control-attribution{font-size:9px;opacity:.55}
+
+/* Modo oscuro del mapa sin cambiar de proveedor: se invierten las teselas
+   y se corrige el tono, para que el agua siga viéndose azul. */
+.dx-mapa-oscuro .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.7)}
