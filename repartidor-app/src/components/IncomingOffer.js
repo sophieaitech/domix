@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon, Button, Chip } from './ui';
+import { useIdioma } from '../context/IdiomaProvider';
 import MapView from './MapView';
 import { money, etaMinutes } from '../lib/pricing';
 import { serviceLabel, SERVICE_ICON } from '../lib/serviceRequests';
@@ -15,6 +16,7 @@ const SECONDS = 40;
    repartidor iba manejando vuelve a ofrecerse; uno que rechazo a proposito,
    no. */
 export default function IncomingOffer({ request, onAccept, onExpire, onReject }) {
+  const { t } = useIdioma();
   const [left, setLeft] = useState(SECONDS);
   const notified = useRef(false);
 
@@ -53,7 +55,7 @@ export default function IncomingOffer({ request, onAccept, onExpire, onReject })
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, letterSpacing: '.08em' }}>
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#fff', animation: 'dxGlow 1s infinite' }} />
-            {request.turbo ? 'DOMIX TURBO · PRIORITARIO' : 'NUEVO PEDIDO'}
+            {request.turbo ? t('entregas.turboPrioritario') : t('entregas.nuevoPedidoMayus')}
           </span>
           <span className="num" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700 }}>
             <Icon name="timer" size={17} fill />

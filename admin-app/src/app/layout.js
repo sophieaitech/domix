@@ -4,6 +4,7 @@ import RegistrarSW from '../components/RegistrarSW';
 import { AppModeProvider } from '../context/AppModeProvider';
 import { AuthProvider } from '../context/AuthProvider';
 import { ThemeProvider } from '../context/ThemeProvider';
+import { IdiomaProvider } from '../context/IdiomaProvider';
 import { OpsProvider } from '../context/OpsProvider';
 import Sidebar from '../components/Sidebar';
 import Onboarding from '../components/Onboarding';
@@ -64,6 +65,7 @@ export default function RootLayout({ children }) {
       <body>
         <RegistrarSW />
         <ThemeProvider>
+          <IdiomaProvider>
           <AuthProvider>
           <AppModeProvider>
           <OpsProvider>
@@ -75,6 +77,7 @@ export default function RootLayout({ children }) {
           </OpsProvider>
         </AppModeProvider>
           </AuthProvider>
+          </IdiomaProvider>
         </ThemeProvider>
       </body>
     </html>

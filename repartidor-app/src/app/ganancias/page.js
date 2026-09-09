@@ -7,6 +7,7 @@ import { Icon, Card, HeroCard, Overline, StatTile, EmptyState, Button } from '..
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
 import ModeSwitch from '../../components/ModeSwitch';
+import { useIdioma } from '../../context/IdiomaProvider';
 import HojaRetiro from '../../components/HojaRetiro';
 import { fetchWeekEarnings, serviceLabel, SERVICE_ICON } from '../../lib/serviceRequests';
 import { fetchSaldo, fetchRetiros, dinero, ESTADO_RETIRO, METODOS_RETIRO } from '../../lib/cuenta';
@@ -16,6 +17,7 @@ const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 function GananciasContent() {
   const { courierProfile, courierId, demoRequests } = useCourierSession();
   const { isDemo } = useAppMode();
+  const { t } = useIdioma();
   const [liveRecords, setLiveRecords] = useState([]);
   const [saldo, setSaldo] = useState({ ganado: 0, retirado: 0, pendiente: 0, disponible: 0, entregas: 0 });
   const [retiros, setRetiros] = useState([]);
@@ -71,26 +73,26 @@ function GananciasContent() {
   return (
     <>
       <header className="dx-topbar" style={{ justifyContent: 'space-between' }}>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>Ganancias</span>
+        <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>{t('ganancias.titulo')}</span>
         <ModeSwitch compact />
       </header>
 
       <div className="dx-page sc">
         <HeroCard glow="green">
-          <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Disponible para retirar</Overline>
+          <Overline style={{ color: 'rgba(255,255,255,.55)' }}>{t('ganancias.disponible')}</Overline>
           <div className="num" style={{ fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', marginTop: 6 }}>{dinero(disponible)}</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginTop: 3 }}>
             {courierProfile?.payout_account
-              ? `Se consigna a tu ${metodo?.label || 'cuenta'} ${courierProfile.payout_account}`
-              : 'Registra tu cuenta de retiro en Cuenta'}
+              ? t('ganancias.seConsigna', { metodo: metodo?.label || '', cuenta: courierProfile.payout_account })
+              : t('ganancias.registraCuenta')}
           </div>
 
           {/* De lo ganado, cuánto ya salió */}
           {!isDemo && saldo.ganado > 0 && (
             <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,.5)' }}>
-              <span>Ganado <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.ganado)}</b></span>
-              <span>Retirado <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.retirado)}</b></span>
-              {saldo.pendiente > 0 && <span>En curso <b className="num" style={{ color: '#F0B354' }}>{dinero(saldo.pendiente)}</b></span>}
+              <span>{t('ganancias.ganado')} <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.ganado)}</b></span>
+              <span>{t('ganancias.retirado')} <b className="num" style={{ color: 'rgba(255,255,255,.8)' }}>{dinero(saldo.retirado)}</b></span>
+              {saldo.pendiente > 0 && <span>{t('ganancias.enCurso')} <b className="num" style={{ color: '#F0B354' }}>{dinero(saldo.pendiente)}</b></span>}
             </div>
           )}
 
@@ -124,9 +126,9 @@ function GananciasContent() {
                 <Icon name="schedule" size={20} fill color="var(--on-tertiary-container)" />
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>Retiro en camino</span>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800 }}>{t('ganancias.retiroEnCamino')}</span>
                 <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>
-                  Pedido el {new Date(enCurso.requested_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} · {enCurso.account}
+                  {t('ganancias.pedidoEl', { fecha: new Date(enCurso.requested_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) })} · {enCurso.account}
                 </span>
               </span>
               <span className="num" style={{ fontWeight: 800, fontSize: 16, color: 'var(--tertiary)' }}>{dinero(enCurso.amount)}</span>
@@ -135,16 +137,16 @@ function GananciasContent() {
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-          <StatTile icon="local_shipping" tone="primary" value={dinero(fees)} label="Tarifas de la semana" />
-          <StatTile icon="volunteer_activism" tone="secondary" value={dinero(tips)} label="Propinas" />
-          <StatTile icon="inventory_2" tone="tertiary" value={records.length} label="Entregas de la semana" />
-          <StatTile icon="savings" tone="primary" value={dinero(isDemo ? semana : saldo.ganado)} label="Ganado en total" />
+          <StatTile icon="local_shipping" tone="primary" value={dinero(fees)} label={t('ganancias.tarifasSemana')} />
+          <StatTile icon="volunteer_activism" tone="secondary" value={dinero(tips)} label={t('ganancias.propinas')} />
+          <StatTile icon="inventory_2" tone="tertiary" value={records.length} label={t('ganancias.entregasSemana')} />
+          <StatTile icon="savings" tone="primary" value={dinero(isDemo ? semana : saldo.ganado)} label={t('ganancias.ganadoTotal')} />
         </div>
 
         {/* Historial de retiros */}
         {retiros.length > 0 && (
           <>
-            <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>Mis retiros</Overline>
+            <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>{t('ganancias.misRetiros')}</Overline>
             <Card style={{ padding: 0, overflow: 'hidden' }}>
               {retiros.map((r, i) => {
                 const st = ESTADO_RETIRO[r.status] || ESTADO_RETIRO.pending;
@@ -168,10 +170,10 @@ function GananciasContent() {
           </>
         )}
 
-        <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>Movimientos</Overline>
+        <Overline style={{ color: 'var(--on-surface-variant)', margin: '20px 0 8px' }}>{t('ganancias.movimientos')}</Overline>
 
         {!loading && records.length === 0 && (
-          <EmptyState icon="receipt_long" title="Sin movimientos" body="Cuando completes entregas, tus pagos aparecerán aquí." />
+          <EmptyState icon="receipt_long" title={t('ganancias.sinMovimientos')} body={t('ganancias.sinMovimientosSub')} />
         )}
 
         {records.length > 0 && (
@@ -197,7 +199,7 @@ function GananciasContent() {
 
         {!isDemo && disponible > 0 && !enCurso && (
           <Button full icon="account_balance_wallet" color="var(--secondary)" style={{ marginTop: 14 }} onClick={() => setHoja(true)}>
-            Solicitar retiro
+            {t('ganancias.solicitarRetiro')}
           </Button>
         )}
       </div>

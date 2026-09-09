@@ -4,18 +4,21 @@ import { useEffect, useState } from 'react';
 import { Icon, Button } from './ui';
 import ModeSwitch from './ModeSwitch';
 import ThemeToggle from './ThemeToggle';
+import IdiomaToggle from './IdiomaToggle';
+import { useIdioma } from '../context/IdiomaProvider';
 import { useOps } from '../context/OpsProvider';
 import { useAppMode } from '../context/AppModeProvider';
 import { requestNotificationPermission, notificationPermission } from '../lib/notify';
 
 /* Barra superior fija, con buscador global y estado de la flota,
    como la del panel de Turapp. */
-export default function TopBar({ title, subtitle, actions, onSearch, searchPlaceholder = 'Buscar pedido, repartidor o código…' }) {
+export default function TopBar({ title, subtitle, actions, onSearch, searchPlaceholder }) {
   const { simulateIncoming, stats, branches } = useOps();
   const { isDemo } = useAppMode();
   const [perm, setPerm] = useState('default');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const { t } = useIdioma();
 
   useEffect(() => { setPerm(notificationPermission()); }, []);
 
@@ -30,7 +33,7 @@ export default function TopBar({ title, subtitle, actions, onSearch, searchPlace
           <input
             value={query}
             onChange={(e) => { setQuery(e.target.value); onSearch?.(e.target.value); }}
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder || t('comun.buscar')}
             style={{ flex: 1, font: '600 12.5px Manrope,sans-serif' }}
           />
         </span>
@@ -53,6 +56,7 @@ export default function TopBar({ title, subtitle, actions, onSearch, searchPlace
           </span>
         </span>
 
+        <IdiomaToggle compact />
         <ThemeToggle compact />
 
         <button

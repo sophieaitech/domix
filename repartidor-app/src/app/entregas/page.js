@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import RequireSession from '../../components/RequireSession';
 import BottomNav from '../../components/BottomNav';
+import { useIdioma } from '../../context/IdiomaProvider';
 import { Icon, Card, Overline, Button, Chip, EmptyState } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
@@ -13,25 +14,26 @@ import { fetchCourierDeliveries, updateRequestStatus, serviceLabel, SERVICE_ICON
 const money = (n) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
 
 const STATUS = {
-  requested: { label: 'Solicitado', bg: 'var(--surface-container)', fg: 'var(--on-surface-variant)' },
-  assigned: { label: 'Por recoger', bg: 'var(--tertiary-container)', fg: 'var(--on-tertiary-container)' },
-  picked_up: { label: 'Recogido', bg: 'var(--primary-container)', fg: 'var(--on-primary-container)' },
-  in_progress: { label: 'En camino', bg: 'var(--primary-container)', fg: 'var(--on-primary-container)' },
-  delivered: { label: 'Entregado', bg: 'var(--secondary-container)', fg: 'var(--on-secondary-container)' },
-  cancelled: { label: 'Cancelado', bg: 'var(--error-container)', fg: 'var(--on-error-container)' },
+  requested: { clave: 'solicitado', bg: 'var(--surface-container)', fg: 'var(--on-surface-variant)' },
+  assigned: { clave: 'porRecoger', bg: 'var(--tertiary-container)', fg: 'var(--on-tertiary-container)' },
+  picked_up: { clave: 'recogido', bg: 'var(--primary-container)', fg: 'var(--on-primary-container)' },
+  in_progress: { clave: 'enCamino', bg: 'var(--primary-container)', fg: 'var(--on-primary-container)' },
+  delivered: { clave: 'entregado', bg: 'var(--secondary-container)', fg: 'var(--on-secondary-container)' },
+  cancelled: { clave: 'cancelado', bg: 'var(--error-container)', fg: 'var(--on-error-container)' },
 };
 
 const NEXT = { assigned: 'picked_up', picked_up: 'in_progress', in_progress: 'delivered' };
-const NEXT_LABEL = { assigned: 'Marcar recogido', picked_up: 'Voy en camino', in_progress: 'Marcar entregado' };
+const CLAVE_SIGUIENTE = { assigned: 'marcarRecogido', picked_up: 'enCamino', in_progress: 'marcarEntregado' };
 const NEXT_ICON = { assigned: 'inventory', picked_up: 'navigation', in_progress: 'task_alt' };
 
 const FILTERS = [
-  { id: 'activos', label: 'Activos', match: (s) => ['assigned', 'picked_up', 'in_progress'].includes(s) },
-  { id: 'entregados', label: 'Entregados', match: (s) => s === 'delivered' },
+  { id: 'activos', clave: 'activos', match: (s) => ['assigned', 'picked_up', 'in_progress'].includes(s) },
+  { id: 'entregados', clave: 'entregados', match: (s) => s === 'delivered' },
   { id: 'todos', label: 'Todos', match: () => true },
 ];
 
 function EntregasContent() {
+  const { t } = useIdioma();
   const { courierProfile, courierId, demoRequests, demoAdvance } = useCourierSession();
   const { isDemo } = useAppMode();
   const [liveItems, setLiveItems] = useState([]);
@@ -69,7 +71,7 @@ function EntregasContent() {
     <>
       <header className="dx-topbar" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
         <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>Entregas</span>
+          <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>{t('entregas.titulo')}</span>
           <ModeSwitch compact />
         </span>
 
@@ -100,7 +102,7 @@ function EntregasContent() {
                 }}
               >
                 {on && <Icon name="check" size={16} />}
-                {f.label}
+                {t(`entregas.${f.clave}`)}
               </button>
             );
           })}
@@ -111,8 +113,8 @@ function EntregasContent() {
         {!loading && list.length === 0 && (
           <EmptyState
             icon="receipt_long"
-            title={filter === 'activos' ? 'Sin entregas activas' : 'Nada por aquí'}
-            body={filter === 'activos' ? 'Los pedidos que aceptes aparecerán aquí con su paso a paso.' : 'Prueba con otro filtro o búsqueda.'}
+            title={filter === 'activos' ? t('entregas.sinActivas') : t('entregas.nadaAqui')}
+            body={filter === 'activos' ? t('entregas.sinActivasSub') : t('entregas.nadaAquiSub')}
           />
         )}
 
@@ -158,11 +160,11 @@ function EntregasContent() {
               )}
 
               <div style={{ marginTop: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Chip bg={st.bg} color={st.fg}>{st.label}</Chip>
+                <Chip bg={st.bg} color={st.fg}>{t(`entregas.${st.clave}`)}</Chip>
                 <span style={{ flex: 1 }} />
                 {NEXT[req.status] && (
                   <Button icon={NEXT_ICON[req.status]} onClick={() => advance(req)} style={{ height: 42, padding: '0 16px', fontSize: 13 }}>
-                    {NEXT_LABEL[req.status]}
+                    {t(`entregas.${CLAVE_SIGUIENTE[req.status]}`)}
                   </Button>
                 )}
               </div>

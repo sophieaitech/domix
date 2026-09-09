@@ -256,3 +256,8 @@ a{color:var(--primary);text-decoration:none}
     margin:20px var(--dx-hueco-x,0) var(--dx-hueco-y,0);
   }
 }
+
+/* Fondo de la barra inferior. Translúcido para que se note el desenfoque
+   de lo que pasa por debajo, pero siguiendo el tema. */
+:root{--dx-nav-fondo:rgba(251,250,248,.92)}
+:root[data-theme="dark"]{--dx-nav-fondo:rgba(20,18,15,.92)}

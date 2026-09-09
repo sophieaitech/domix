@@ -7,8 +7,10 @@ import { Icon, Card, HeroCard, Button, Chip } from '../../components/ui';
 import { useCourierSession } from '../../context/CourierSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
 import { useTheme } from '../../context/ThemeProvider';
+import { useIdioma } from '../../context/IdiomaProvider';
 import ModeSwitch from '../../components/ModeSwitch';
 import ThemeToggle from '../../components/ThemeToggle';
+import IdiomaToggle from '../../components/IdiomaToggle';
 import HojaDocumento from '../../components/HojaDocumento';
 import HojaVehiculo from '../../components/HojaVehiculo';
 import HojaCuentaRetiro from '../../components/HojaCuentaRetiro';
@@ -20,6 +22,7 @@ function CuentaContent() {
   const { profile, courierProfile, signOut } = useCourierSession();
   const { isDemo } = useAppMode();
   const { theme, changeTheme } = useTheme();
+  const { idioma, cambiarIdioma, t } = useIdioma();
 
   const [docs, setDocs] = useState([]);
   const [vehicle, setVehicle] = useState(null);
@@ -53,14 +56,14 @@ function CuentaContent() {
 
   const vehLabel = vehicle
     ? `${VEHICULOS.find((v) => v.id === vehicle.vehicle_type)?.label || vehicle.vehicle_type} ${vehicle.plate || ''}`.trim()
-    : 'Sin registrar';
+    : t('cuenta.sinRegistrar');
   const cuentaLabel = perfil?.payout_account
     ? `${METODOS_RETIRO.find((m) => m.id === perfil.payout_method)?.label || ''} ${perfil.payout_account}`.trim()
-    : 'Sin registrar';
+    : t('cuenta.sinRegistrar');
 
   const horarioLabel = perfil?.preferred_schedule
     ? (HORARIOS.find((h) => h.id === perfil.preferred_schedule)?.id || perfil.preferred_schedule)
-    : 'Sin definir';
+    : t('cuenta.sinDefinir');
 
   /* Soporte abre WhatsApp con el mensaje ya escrito: el repartidor no
      debería tener que explicar quién es cada vez que escribe. */
@@ -76,17 +79,18 @@ function CuentaContent() {
   };
 
   const rows = [
-    { icon: 'two_wheeler', label: 'Mi vehículo', value: vehLabel, falta: !vehicle, onClick: () => abrir('vehiculo') },
-    { icon: 'account_balance', label: 'Cuenta para retiros', value: cuentaLabel, falta: !perfil?.payout_account, onClick: () => abrir('retiro') },
-    { icon: 'map', label: 'Zona de trabajo', value: perfil?.work_zone || 'Centro', onClick: () => abrir('preferencias') },
-    { icon: 'schedule', label: 'Horario preferido', value: horarioLabel, falta: !perfil?.preferred_schedule, onClick: () => abrir('preferencias') },
-    { icon: 'support_agent', label: 'Ayuda y soporte', value: 'WhatsApp', onClick: abrirSoporte },
+    { icon: 'two_wheeler', label: t('cuenta.miVehiculo'), value: vehLabel, falta: !vehicle, onClick: () => abrir('vehiculo') },
+    { icon: 'account_balance', label: t('cuenta.cuentaRetiros'), value: cuentaLabel, falta: !perfil?.payout_account, onClick: () => abrir('retiro') },
+    { icon: 'map', label: t('cuenta.zonaTrabajo'), value: perfil?.work_zone || 'Centro', onClick: () => abrir('preferencias') },
+    { icon: 'schedule', label: t('cuenta.horario'), value: horarioLabel, falta: !perfil?.preferred_schedule, onClick: () => abrir('preferencias') },
+    { icon: 'support_agent', label: t('cuenta.ayuda'), value: 'WhatsApp', onClick: abrirSoporte },
   ];
 
   return (
     <>
       <header className="dx-topbar" style={{ justifyContent: 'space-between' }}>
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>Cuenta</span>
+        <span className="dsp" style={{ fontWeight: 800, fontSize: 25 }}>{t('cuenta.titulo')}</span>
+        <IdiomaToggle compact />
         <ThemeToggle compact />
         <ModeSwitch compact />
       </header>
@@ -120,13 +124,13 @@ function CuentaContent() {
         {/* Documentos: cada fila abre su hoja para subir o reemplazar */}
         <Card style={{ padding: 16, marginTop: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: 14, fontWeight: 800 }}>Documentos</span>
+            <span style={{ fontSize: 14, fontWeight: 800 }}>{t('cuenta.documentos')}</span>
             <Chip
               icon={aprobados === 4 ? 'verified' : 'pending'}
               bg={aprobados === 4 ? 'var(--secondary-container)' : 'var(--surface-container)'}
               color={aprobados === 4 ? 'var(--on-secondary-container)' : 'var(--on-surface-variant)'}
             >
-              {aprobados} de 4
+              {t('cuenta.deCuatro', { n: aprobados })}
             </Chip>
           </div>
 
@@ -194,12 +198,11 @@ function CuentaContent() {
 
         {/* Apariencia */}
         <Card style={{ padding: 16, marginTop: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>Apariencia</div>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>{t('cuenta.apariencia')}</div>
           <div style={{ display: 'flex', gap: 9 }}>
             {[
-              { id: 'light', label: 'Claro', icon: 'light_mode' },
-              { id: 'dark', label: 'Oscuro', icon: 'dark_mode' },
-              { id: 'auto', label: 'Auto', icon: 'brightness_auto' },
+              { id: 'light', label: t('cuenta.claro'), icon: 'light_mode' },
+              { id: 'dark', label: t('cuenta.oscuro'), icon: 'dark_mode' },
             ].map((t) => {
               const on = theme === t.id;
               return (
@@ -221,12 +224,42 @@ function CuentaContent() {
           </div>
         </Card>
 
+        {/* Idioma. Mismo dibujo que Apariencia: dos ajustes parecidos se
+            leen más rápido cuando se ven igual. */}
+        <Card style={{ padding: 16, marginTop: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>{t('cuenta.idioma')}</div>
+          <div style={{ display: 'flex', gap: 9 }}>
+            {[
+              { id: 'es', label: t('cuenta.espanol'), corto: 'ES' },
+              { id: 'en', label: t('cuenta.ingles'), corto: 'EN' },
+            ].map((o) => {
+              const on = idioma === o.id;
+              return (
+                <button
+                  key={o.id}
+                  onClick={() => cambiarIdioma(o.id)}
+                  style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '14px 8px',
+                    borderRadius: 'var(--sh-md)', fontSize: 12.5, fontWeight: 800,
+                    background: on ? 'var(--primary)' : 'var(--surface-container)',
+                    color: on ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                    transition: 'background .2s var(--ease-out)',
+                  }}
+                >
+                  <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '.06em', opacity: on ? 1 : .6 }}>{o.corto}</span>
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+
         <Button full variant="outlined" icon="swap_horiz" color="var(--error)" onClick={signOut} style={{ marginTop: 14, borderColor: 'var(--outline-variant)' }}>
-          Cambiar de repartidor
+          {t('cuenta.cambiarRepartidor')}
         </Button>
 
         <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--on-surface-variant)', marginTop: 16 }}>
-          Domix · Mensajería &amp; Logística · Buenaventura
+          {t('cuenta.pie')}
         </div>
       </div>
 

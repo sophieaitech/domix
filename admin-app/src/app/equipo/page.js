@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import TopBar from '../../components/TopBar';
 import GuiaSeccion from '../../components/GuiaSeccion';
-import { Icon, Card, Overline, Button, Chip, Switch } from '../../components/ui';
+import { Icon, Card, CardTitle, Overline, Button, Chip, Switch } from '../../components/ui';
 import { useTheme } from '../../context/ThemeProvider';
+import { useIdioma } from '../../context/IdiomaProvider';
 import { useOps } from '../../context/OpsProvider';
 import { notificationPermission, requestNotificationPermission } from '../../lib/notify';
 
@@ -17,11 +18,11 @@ const ROLES = [
 const TEMAS = [
   { id: 'light', label: 'Claro', icon: 'light_mode' },
   { id: 'dark', label: 'Oscuro', icon: 'dark_mode' },
-  { id: 'auto', label: 'Automático', icon: 'brightness_auto' },
 ];
 
 export default function EquipoPage() {
   const { theme, changeTheme } = useTheme();
+  const { idioma, cambiarIdioma, t: tr } = useIdioma();
   const { couriers, isDemo } = useOps();
   const [perm, setPerm] = useState('default');
   const [sound, setSound] = useState(true);
@@ -83,7 +84,7 @@ export default function EquipoPage() {
           <Card style={{ padding: 20 }}>
             <span style={{ fontSize: 15, fontWeight: 800 }}>Apariencia</span>
             <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', marginTop: 5, lineHeight: 1.5 }}>
-              Modo claro para el día, oscuro para la noche, o que siga al sistema.
+              Claro para el día, oscuro para la noche. Se recuerda en este navegador.
             </div>
             <div style={{ display: 'flex', gap: 9, marginTop: 16 }}>
               {TEMAS.map((t) => {
@@ -103,6 +104,36 @@ export default function EquipoPage() {
                   >
                     <Icon name={t.icon} size={22} fill={on} />
                     {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Idioma del panel. Los datos (nombres, direcciones, barrios)
+              no se traducen nunca: son de Buenaventura y así se quedan. */}
+          <Card>
+            <CardTitle sub="Para socios o auditores que no leen español.">Idioma</CardTitle>
+            <div style={{ display: 'flex', gap: 9, marginTop: 16 }}>
+              {[
+                { id: 'es', label: 'Español', corto: 'ES' },
+                { id: 'en', label: 'English', corto: 'EN' },
+              ].map((o) => {
+                const on = idioma === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => cambiarIdioma(o.id)}
+                    style={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 10px',
+                      borderRadius: 'var(--sh-md)', fontSize: 12.5, fontWeight: 800,
+                      background: on ? 'var(--primary)' : 'var(--surface-container)',
+                      color: on ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+                      border: `1px solid ${on ? 'var(--primary)' : 'var(--outline-variant)'}`,
+                    }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '.06em', opacity: on ? 1 : .6 }}>{o.corto}</span>
+                    {o.label}
                   </button>
                 );
               })}

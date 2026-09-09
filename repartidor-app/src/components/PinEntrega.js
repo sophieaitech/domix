@@ -3,12 +3,14 @@
 import { useRef, useState } from 'react';
 import { Icon, Button } from './ui';
 import { confirmDelivery } from '../lib/serviceRequests';
+import { useIdioma } from '../context/IdiomaProvider';
 
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'borrar'];
 
 /* Hoja de confirmación: el cliente dicta 4 dígitos y aquí se verifican.
    El PIN nunca viaja hacia esta app; solo se manda a comprobar. */
 export default function PinEntrega({ request, onClose, onConfirmado }) {
+  const { t } = useIdioma();
   const [pin, setPin] = useState('');
   const pinRef = useRef('');
   const [busy, setBusy] = useState(false);
@@ -57,7 +59,7 @@ export default function PinEntrega({ request, onClose, onConfirmado }) {
         <button aria-label="Cerrar" onClick={onClose} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surface-container)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="close" size={20} />
         </button>
-        <div style={{ flex: 1, font: '800 18px Manrope,sans-serif', letterSpacing: '-.03em' }}>Confirmar entrega</div>
+        <div style={{ flex: 1, font: '800 18px Manrope,sans-serif', letterSpacing: '-.03em' }}>{t('entregas.confirmarEntrega')}</div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 24px', textAlign: 'center' }}>
@@ -77,7 +79,7 @@ export default function PinEntrega({ request, onClose, onConfirmado }) {
               Pídele el código al cliente
             </div>
             <div style={{ font: '500 13.5px/1.5 Manrope,sans-serif', color: 'var(--on-surface-variant)', marginTop: 7 }}>
-              {request.contact_name || 'El cliente'} tiene 4 dígitos en su app. Escríbelos aquí para cerrar la entrega.
+              {t('entregas.pinAyuda', { nombre: request.contact_name || t('entregas.elCliente') })}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: 12, margin: '28px 0 10px' }}>
@@ -100,7 +102,7 @@ export default function PinEntrega({ request, onClose, onConfirmado }) {
             </div>
 
             <div style={{ height: 22, font: '600 12.5px Manrope,sans-serif', color: error ? 'var(--error)' : 'var(--on-surface-variant)' }}>
-              {busy ? 'Verificando…' : error}
+              {busy ? t('entregas.verificando') : error}
             </div>
           </>
         )}

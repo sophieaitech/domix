@@ -2,17 +2,19 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from './ui';
+import { useIdioma } from '../context/IdiomaProvider';
 
 const TABS = [
-  { name: 'Inicio', path: '/home', icon: 'home' },
-  { name: 'Ganancias', path: '/ganancias', icon: 'payments' },
-  { name: 'Entregas', path: '/entregas', icon: 'receipt_long' },
-  { name: 'Cuenta', path: '/cuenta', icon: 'person' },
+  { clave: 'inicio', path: '/home', icon: 'home' },
+  { clave: 'ganancias', path: '/ganancias', icon: 'payments' },
+  { clave: 'entregas', path: '/entregas', icon: 'receipt_long' },
+  { clave: 'cuenta', path: '/cuenta', icon: 'person' },
 ];
 
 export default function BottomNav({ badges = {} }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useIdioma();
 
   return (
     <nav
@@ -20,7 +22,9 @@ export default function BottomNav({ badges = {} }) {
         position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 80,
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',
         height: 74, paddingBottom: 8,
-        background: 'rgba(251,250,248,.92)', backdropFilter: 'blur(18px)',
+        /* Con un color claro fijo, en modo oscuro la barra salía blanca
+           al pie de una pantalla negra. Va por variable de tema. */
+        background: 'var(--dx-nav-fondo)', backdropFilter: 'blur(18px)',
         borderTop: '1px solid var(--outline-variant)',
       }}
     >
@@ -50,7 +54,7 @@ export default function BottomNav({ badges = {} }) {
               )}
             </span>
             <span style={{ fontSize: 11, fontWeight: active ? 800 : 600, color: active ? 'var(--on-surface)' : 'var(--on-surface-variant)' }}>
-              {tab.name}
+              {t(`nav.${tab.clave}`)}
             </span>
           </button>
         );

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import RequireSession from '../../components/RequireSession';
 import BottomNav from '../../components/BottomNav';
+import { useIdioma } from '../../context/IdiomaProvider';
 import IncomingOffer from '../../components/IncomingOffer';
 import MapView from '../../components/MapView';
 import ModeSwitch from '../../components/ModeSwitch';
@@ -21,9 +22,10 @@ const ACTIVE = ['assigned', 'picked_up', 'in_progress'];
 const REOFRECER_MS = 60 * 1000;
 const RECHAZO_MS = 60 * 60 * 1000;
 const NEXT = { assigned: 'picked_up', picked_up: 'in_progress', in_progress: 'delivered' };
-const NEXT_LABEL = { assigned: 'Ya lo recogí', picked_up: 'Voy en camino', in_progress: 'Entregado' };
+const CLAVE_SIGUIENTE = { assigned: 'yaLoRecogi', picked_up: 'voyEnCamino', in_progress: 'entregado' };
 
 function HomeContent() {
+  const { t } = useIdioma();
   const { profile, courierProfile, setOnlineStatus, courierId, demoRequests, demoAccept, demoAdvance, demoInject } = useCourierSession();
   const { isDemo } = useAppMode();
 
@@ -116,7 +118,7 @@ function HomeContent() {
     if (!next) return;
     if (isDemo) {
       demoAdvance(req.id, next);
-      if (next === 'delivered') pushNotify('Entrega completada', { body: `${money(req.price)} sumados a tu día`, tag: `fin-${req.id}` });
+      if (next === 'delivered') pushNotify(t('inicio.entregaCompletada'), { body: t('inicio.sumadosATuDia', { monto: money(req.price) }), tag: `fin-${req.id}` });
       return;
     }
     const { error } = await updateRequestStatus(req.id, next);
@@ -140,7 +142,7 @@ function HomeContent() {
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="dsp" style={{ fontWeight: 700, fontSize: 17, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            Hola, {profile?.first_name || 'Repartidor'}
+            {t('inicio.hola', { nombre: profile?.first_name || '' })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: 'var(--on-surface-variant)', fontWeight: 600, marginTop: 1 }}>
             <Icon name="star" size={13} fill color="var(--tertiary)" />
@@ -156,7 +158,7 @@ function HomeContent() {
       <div className="dx-page sc">
         <HeroCard glow={isOnline ? 'green' : 'orange'}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Overline style={{ color: 'rgba(255,255,255,.55)' }}>Ganado hoy</Overline>
+            <Overline style={{ color: 'rgba(255,255,255,.55)' }}>{t('inicio.ganadoHoy')}</Overline>
             <Chip icon="two_wheeler" bg="rgba(255,255,255,.12)" color="#A9D98F">
               {courierProfile?.total_deliveries || 0} entregas
             </Chip>
@@ -171,9 +173,9 @@ function HomeContent() {
               <Icon name={isOnline ? 'bolt' : 'bedtime'} size={19} fill color={isOnline ? '#A9D98F' : 'rgba(255,255,255,.6)'} />
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{isOnline ? 'Estás en línea' : 'Estás desconectado'}</span>
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 800 }}>{isOnline ? t('inicio.enLinea') : t('inicio.fueraDeLinea')}</span>
               <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>
-                {isOnline ? `Recibiendo pedidos en ${courierProfile?.work_zone || 'Centro'}` : 'Actívate para recibir pedidos'}
+                {isOnline ? t('inicio.enLineaSub', { zona: courierProfile?.work_zone || 'Centro' }) : t('inicio.actívate')}
               </span>
             </span>
             <Switch checked={isOnline} onChange={toggle} disabled={toggling} />
@@ -182,9 +184,9 @@ function HomeContent() {
           {/* Resumen del turno, en la misma tarjeta */}
           <div style={{ display: 'flex', marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.13)' }}>
             {[
-              { l: 'Entregas hoy', v: deliveredToday.length },
-              { l: 'Calificación', v: Number(courierProfile?.rating || 5).toFixed(1) },
-              { l: 'En curso', v: active.length },
+              { l: t('inicio.entregasHoy'), v: deliveredToday.length },
+              { l: t('comun.calificacion'), v: Number(courierProfile?.rating || 5).toFixed(1) },
+              { l: t('inicio.enCurso'), v: active.length },
             ].map((s, i) => (
               <span key={s.l} style={{ flex: 1, paddingLeft: i ? 14 : 0, borderLeft: i ? '1px solid rgba(255,255,255,.13)' : 'none' }}>
                 <span style={{ display: 'block', fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,.55)' }}>{s.l}</span>
@@ -201,8 +203,8 @@ function HomeContent() {
               <Icon name="notifications_active" size={19} fill color="var(--on-tertiary-container)" />
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>Activa las alertas</span>
-              <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>Te avisamos apenas entre un pedido</span>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 700 }}>{t('inicio.activaAlertas')}</span>
+              <span style={{ display: 'block', fontSize: 11.5, color: 'var(--on-surface-variant)', marginTop: 1 }}>{t('inicio.activaAlertasSub')}</span>
             </span>
             <Button style={{ height: 38, fontSize: 12.5, padding: '0 14px' }} onClick={async () => setPerm(await requestNotificationPermission())}>
               Activar
@@ -257,7 +259,7 @@ function HomeContent() {
               )}
 
               <Button full icon="navigation" color="var(--secondary)" onClick={() => advance(current)} style={{ marginTop: 12 }}>
-                {NEXT_LABEL[current.status]}
+                {t('inicio.' + CLAVE_SIGUIENTE[current.status])}
               </Button>
             </div>
           </Card>
@@ -268,7 +270,7 @@ function HomeContent() {
           <Card tone="low" style={{ marginTop: 12, padding: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 11 }}>
               <Icon name="science" size={18} fill color="var(--tertiary)" />
-              <span style={{ fontSize: 12.5, fontWeight: 800 }}>Simulador de pedidos</span>
+              <span style={{ fontSize: 12.5, fontWeight: 800 }}>{t('inicio.simulador')}</span>
             </div>
             <div style={{ display: 'flex', gap: 9 }}>
               <Button variant="outlined" icon="add_alert" onClick={() => simulate(false)} style={{ flex: 1, height: 44, fontSize: 12.5, padding: 0 }}>
@@ -284,9 +286,9 @@ function HomeContent() {
         {isOnline && !current && open.length === 0 && !loading && (
           <Card style={{ marginTop: 12, padding: '28px 22px', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><Spinner /></div>
-            <div className="dsp" style={{ fontWeight: 700, fontSize: 16, marginTop: 14 }}>Buscando pedidos cerca</div>
+            <div className="dsp" style={{ fontWeight: 700, fontSize: 16, marginTop: 14 }}>{t('inicio.buscandoPedidos')}</div>
             <div style={{ fontSize: 12.5, color: 'var(--on-surface-variant)', lineHeight: 1.5, marginTop: 4 }}>
-              Estás en zona {courierProfile?.work_zone || 'Centro'}. Te avisamos apenas llegue uno.
+              {t('inicio.buscandoPedidosSub', { zona: courierProfile?.work_zone || 'Centro' })}
             </div>
           </Card>
         )}
@@ -297,7 +299,7 @@ function HomeContent() {
               icon="bedtime"
               title="Estás desconectado"
               body="Actívate para empezar a recibir mensajería, encomiendas y mandados."
-              action={<Button icon="bolt" color="var(--secondary)" onClick={toggle}>Conectarme</Button>}
+              action={<Button icon="bolt" color="var(--secondary)" onClick={toggle}>{t('inicio.conectarme')}</Button>}
             />
           </div>
         )}

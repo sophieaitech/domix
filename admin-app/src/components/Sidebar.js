@@ -3,36 +3,37 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from './ui';
 import { useOps } from '../context/OpsProvider';
+import { useIdioma } from '../context/IdiomaProvider';
 
 const NAV = [
   {
-    title: 'OPERACIÓN',
+    clave: 'operacion',
     items: [
-      { label: 'Dashboard', path: '/', icon: 'dashboard' },
-      { label: 'Pedidos en vivo', path: '/pedidos', icon: 'receipt_long', badge: 'pending' },
-      { label: 'Mapa en vivo', path: '/mapa', icon: 'explore' },
-      { label: 'Bandeja WhatsApp', path: '/bandeja', icon: 'chat', tag: 'IA' },
+      { clave: 'dashboard', path: '/', icon: 'dashboard' },
+      { clave: 'pedidos', path: '/pedidos', icon: 'receipt_long', badge: 'pending' },
+      { clave: 'mapa', path: '/mapa', icon: 'explore' },
+      { clave: 'bandeja', path: '/bandeja', icon: 'chat', tag: 'IA' },
     ],
   },
   {
-    title: 'RED DOMIX',
+    clave: 'red',
     items: [
-      { label: 'Repartidores', path: '/repartidores', icon: 'two_wheeler' },
-      { label: 'Sedes y ciudades', path: '/sedes', icon: 'location_city' },
+      { clave: 'repartidores', path: '/repartidores', icon: 'two_wheeler' },
+      { clave: 'sedes', path: '/sedes', icon: 'location_city' },
     ],
   },
   {
-    title: 'DINERO',
+    clave: 'dinero',
     items: [
-      { label: 'Pagos y documentos', path: '/pagos', icon: 'account_balance_wallet', badge: 'retiros' },
-      { label: 'Motor de despacho', path: '/despacho', icon: 'tune' },
-      { label: 'Domix Turbo', path: '/turbo', icon: 'bolt', tag: 'PRO' },
+      { clave: 'pagos', path: '/pagos', icon: 'account_balance_wallet', badge: 'retiros' },
+      { clave: 'despacho', path: '/despacho', icon: 'tune' },
+      { clave: 'turbo', path: '/turbo', icon: 'bolt', tag: 'PRO' },
     ],
   },
   {
-    title: 'SISTEMA',
+    clave: 'sistema',
     items: [
-      { label: 'Roles y permisos', path: '/equipo', icon: 'shield_person' },
+      { clave: 'equipo', path: '/equipo', icon: 'shield_person' },
     ],
   },
 ];
@@ -41,6 +42,7 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { stats } = useOps();
+  const { t } = useIdioma();
 
   return (
     <aside className="dx-sidebar">
@@ -66,9 +68,9 @@ export default function Sidebar() {
       {/* Navegación agrupada */}
       <nav className="sb" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {NAV.map((group) => (
-          <div key={group.title} style={{ marginBottom: 16 }}>
+          <div key={group.clave} style={{ marginBottom: 16 }}>
             <div style={{ font: '600 9.5px Manrope,sans-serif', letterSpacing: '.12em', color: 'rgba(255,255,255,.34)', padding: '0 11px 7px' }}>
-              {group.title}
+              {t(`nav.${group.clave}`)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {group.items.map((n) => {
@@ -79,7 +81,7 @@ export default function Sidebar() {
                 return (
                   <button key={n.path} className="dx-navitem" data-active={active} onClick={() => router.push(n.path)}>
                     <Icon name={n.icon} size={19} fill={active} />
-                    <span style={{ flex: 1 }}>{n.label}</span>
+                    <span style={{ flex: 1 }}>{t(`nav.${n.clave}`)}</span>
                     {badge > 0 && (
                       <span className="num" style={{ minWidth: 19, height: 19, padding: '0 5px', borderRadius: 99, background: '#c98a1e', color: '#fff', font: "700 10.5px 'IBM Plex Mono',monospace", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {badge}
@@ -104,8 +106,8 @@ export default function Sidebar() {
           DX
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', font: '700 12px Manrope,sans-serif' }}>Equipo Domix</span>
-          <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'rgba(255,255,255,.45)', marginTop: 1 }}>Operaciones</span>
+          <span style={{ display: 'block', font: '700 12px Manrope,sans-serif' }}>{t('nav.equipoDomix')}</span>
+          <span style={{ display: 'block', font: '500 10.5px Manrope,sans-serif', color: 'rgba(255,255,255,.45)', marginTop: 1 }}>{t('nav.operaciones')}</span>
         </span>
       </div>
     </aside>

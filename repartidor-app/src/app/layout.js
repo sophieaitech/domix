@@ -3,6 +3,7 @@ import { ICONOS } from '../lib/iconos';
 import RegistrarSW from '../components/RegistrarSW';
 import { AppModeProvider } from '../context/AppModeProvider';
 import { ThemeProvider } from '../context/ThemeProvider';
+import { IdiomaProvider } from '../context/IdiomaProvider';
 import { CourierSessionProvider } from '../context/CourierSessionProvider';
 import PhoneFrame from '../components/PhoneFrame';
 import Splash from '../components/Splash';
@@ -63,6 +64,7 @@ export default function RootLayout({ children }) {
       <body>
         <RegistrarSW />
         <ThemeProvider>
+          <IdiomaProvider>
           <AppModeProvider>
           <PhoneFrame>
             <div className="dx-shell">
@@ -71,6 +73,7 @@ export default function RootLayout({ children }) {
             </div>
           </PhoneFrame>
         </AppModeProvider>
+          </IdiomaProvider>
         </ThemeProvider>
       </body>
     </html>
