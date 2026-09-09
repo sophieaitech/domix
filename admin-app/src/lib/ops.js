@@ -29,10 +29,14 @@ export const OPEN_STATUSES = ['requested', 'assigned', 'picked_up', 'in_progress
 
 /* Columnas del tablero de pedidos en vivo. */
 export const BOARD_COLUMNS = [
-  { id: 'requested', label: 'Sin asignar', icon: 'pending_actions' },
-  { id: 'assigned', label: 'Por recoger', icon: 'assignment_ind' },
-  { id: 'picked_up', label: 'Recogidos', icon: 'inventory' },
-  { id: 'in_progress', label: 'En camino', icon: 'moped' },
+  { id: 'requested', label: 'Sin asignar', icon: 'pending_actions', tono: 'orange',
+    vacio: 'Todo asignado. Cuando entre un pedido, aparece aquí.' },
+  { id: 'assigned', label: 'Por recoger', icon: 'assignment_ind', tono: 'navy',
+    vacio: 'Nadie va en camino a recoger ahora mismo.' },
+  { id: 'picked_up', label: 'Recogidos', icon: 'inventory', tono: 'purple',
+    vacio: 'Sin paquetes en mano.' },
+  { id: 'in_progress', label: 'En camino', icon: 'moped', tono: 'green',
+    vacio: 'Ninguna entrega en la calle.' },
 ];
 
 export async function fetchRequests({ limit = 200 } = {}) {

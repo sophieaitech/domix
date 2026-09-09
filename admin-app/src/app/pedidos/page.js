@@ -19,90 +19,102 @@ function minutesAgo(iso) {
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
-/* ---------- Ficha de pedido en el tablero ---------- */
+/* ---------- Ficha de pedido ----------
+   Jerarquía: primero el servicio y la urgencia, luego la ruta, el precio
+   y de último quién lo lleva. Es el orden en que mira un despachador. */
 function OrderCard({ req, couriers, onAssign, onAdvance, onOpen }) {
-  const st = STATUS_META[req.status] || STATUS_META.requested;
   const courier = couriers.find((c) => c.id === req.courier_id);
-  const late = req.status === 'requested' && (Date.now() - new Date(req.created_at).getTime()) > 8 * 60000;
+  const minutos = Math.round((Date.now() - new Date(req.created_at).getTime()) / 60000);
+  const tarde = req.status === 'requested' && minutos > 8;
+  const nuevo = minutos < 2;
 
   return (
-    <Card
-      elevation={2}
-      style={{
-        padding: 14, marginBottom: 11, cursor: 'pointer',
-        borderLeft: `4px solid ${req.turbo ? 'var(--secondary)' : st.dot}`,
-        animation: 'dxUp .2s var(--ease-out)',
-      }}
+    <div
       onClick={() => onOpen(req)}
+      className="dx-pedido"
+      data-turbo={req.turbo ? 'si' : 'no'}
+      data-tarde={tarde ? 'si' : 'no'}
+      style={{ animation: nuevo ? 'dxEntra .45s cubic-bezier(.2,.9,.25,1) both' : 'dxUp .22s var(--ease-out) both' }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <span style={{ width: 34, height: 34, borderRadius: 'var(--sh-xs)', background: 'var(--primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-          <Icon name={SERVICE_ICON[req.service_type]} size={18} color="var(--on-primary-container)" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span className="dx-pedido-icono">
+          <Icon name={SERVICE_ICON[req.service_type]} size={17} />
         </span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>{SERVICE_LABELS[req.service_type]}</span>
-          <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 10.5, color: 'var(--on-surface-variant)' }}>#{req.tracking_code}</span>
+          <span style={{ display: 'block', font: '800 13px Manrope,sans-serif', letterSpacing: '-.01em' }}>
+            {SERVICE_LABELS[req.service_type]}
+          </span>
+          <span className="num" style={{ display: 'block', font: "500 10px 'IBM Plex Mono',monospace", color: 'var(--mu)', marginTop: 1 }}>
+            #{req.tracking_code}
+          </span>
         </span>
-        {req.turbo && <Chip icon="bolt" bg="var(--secondary)" color="#fff">TURBO</Chip>}
+        {req.turbo && (
+          <span className="dx-turbo-chip"><Icon name="bolt" size={12} fill /> TURBO</span>
+        )}
       </div>
 
-      <div style={{ marginTop: 11, fontSize: 12.5, fontWeight: 600 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', border: '2px solid var(--primary)', flex: 'none' }} />
-          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.pickup_address}</span>
-        </div>
-        <div style={{ width: 2, height: 10, background: 'var(--outline-variant)', marginLeft: 3 }} />
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flex: 'none' }} />
-          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.dropoff_address}</span>
-        </div>
+      <div style={{ marginTop: 12, display: 'flex', gap: 9 }}>
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', border: '2px solid var(--mu)' }} />
+          <span style={{ width: 1.5, flex: 1, minHeight: 14, background: 'var(--bd)', margin: '2px 0' }} />
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)' }} />
+        </span>
+        <span style={{ flex: 1, minWidth: 0, font: '600 11.5px/1.55 Manrope,sans-serif' }}>
+          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--mu)' }}>
+            {req.pickup_address}
+          </span>
+          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {req.dropoff_address}
+          </span>
+        </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--outline-variant)' }}>
-        <Icon name="schedule" size={14} color={late ? 'var(--tertiary)' : 'var(--on-surface-variant)'} />
-        <span style={{ fontSize: 11.5, fontWeight: 700, color: late ? 'var(--tertiary)' : 'var(--on-surface-variant)' }}>{minutesAgo(req.created_at)}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 11, borderTop: '1px solid var(--bd2)' }}>
+        <span className={tarde ? 'dx-tarde' : ''} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Icon name={tarde ? 'error' : 'schedule'} size={13} fill={tarde} color={tarde ? 'var(--orange)' : 'var(--mu)'} />
+          <span className="num" style={{ font: "700 10.5px 'IBM Plex Mono',monospace", color: tarde ? 'var(--orange)' : 'var(--mu)' }}>
+            {minutos < 60 ? `${minutos} min` : `${Math.floor(minutos / 60)} h`}
+          </span>
+        </span>
         <span style={{ flex: 1 }} />
-        <span className="dsp" style={{ fontWeight: 800, fontSize: 16 }}>{money(req.price)}</span>
+        <span className="num" style={{ font: "800 16px 'IBM Plex Mono',monospace", letterSpacing: '-.03em' }}>
+          {money(req.price)}
+        </span>
       </div>
 
       {req.status === 'requested' ? (
-        <select
-          onClick={(e) => e.stopPropagation()}
-          defaultValue=""
-          onChange={(e) => onAssign(req.id, e.target.value)}
-          style={{ width: '100%', height: 40, marginTop: 11, padding: '0 11px', borderRadius: 'var(--sh-xs)', background: 'var(--tertiary-container)', color: 'var(--on-tertiary-container)', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
-        >
-          <option value="">Asignar repartidor…</option>
-          {couriers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.first_name} {c.last_name}{c.status === 'online' ? ' · en línea' : c.status === 'busy' ? ' · ocupado' : ''}
-            </option>
-          ))}
-        </select>
+        <div className="dx-asignar" onClick={(e) => e.stopPropagation()}>
+          <Icon name="person_search" size={15} color="var(--orange)" />
+          <select defaultValue="" onChange={(e) => onAssign(req.id, e.target.value)}>
+            <option value="">Asignar repartidor…</option>
+            {couriers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.first_name} {c.last_name}{c.status === 'online' ? ' · libre' : c.status === 'busy' ? ' · ocupado' : ' · offline'}
+              </option>
+            ))}
+          </select>
+          <Icon name="expand_more" size={16} color="var(--orange)" />
+        </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-            <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--primary-container)', color: 'var(--on-primary-container)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 800, flex: 'none' }}>
-              {(courier?.first_name?.[0] || '?').toUpperCase()}
-            </span>
-            <span style={{ fontSize: 11.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {courier ? `${courier.first_name} ${courier.last_name || ''}`.trim() : 'Sin repartidor'}
+            <span className="dx-avatar">{(courier?.first_name?.[0] || '?').toUpperCase()}</span>
+            <span style={{ font: '600 11px Manrope,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {courier ? courier.first_name : 'Sin repartidor'}
             </span>
           </span>
           {NEXT[req.status] && (
-            <Button
-              variant="outlined"
-              onClick={(e) => { e.stopPropagation(); onAdvance(req.id, NEXT[req.status]); }}
-              style={{ height: 34, fontSize: 11.5, padding: '0 11px' }}
-            >
+            <button className="dx-avanzar" onClick={(e) => { e.stopPropagation(); onAdvance(req.id, NEXT[req.status]); }}>
               {NEXT_LABEL[req.status]}
-            </Button>
+              <Icon name="arrow_forward" size={13} />
+            </button>
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }
+
 
 /* ---------- Detalle lateral con mapa ---------- */
 function OrderDrawer({ req, couriers, onClose, onAdvance }) {
@@ -343,24 +355,34 @@ function PedidosContent() {
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 70 }}><Spinner /></div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(255px,1fr))', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+        <div className="dx-tablero sb">
           {BOARD_COLUMNS.map((col) => {
             const items = visibles.filter((r) => r.status === col.id);
+            const tono = {
+              orange: ['var(--orangeS)', 'var(--orange)'],
+              navy: ['var(--navyS)', 'var(--navy)'],
+              purple: ['var(--purpleS)', 'var(--purple)'],
+              green: ['var(--greenS)', 'var(--green)'],
+            }[col.tono] || ['var(--sf)', 'var(--mu)'];
+
             return (
-              <div key={col.id} style={{ minWidth: 255 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 14px', borderRadius: 'var(--sh-md)', background: 'var(--surface-container)', marginBottom: 12 }}>
-                  <Icon name={col.icon} size={18} color="var(--on-surface-variant)" />
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 800 }}>{col.label}</span>
-                  <span style={{ minWidth: 24, height: 24, padding: '0 7px', borderRadius: 999, background: items.length ? 'var(--primary)' : 'var(--outline-variant)', color: items.length ? '#fff' : 'var(--on-surface-variant)', fontSize: 11.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={col.id} className="dx-columna">
+                <div className="dx-col-cabeza">
+                  <span className="dx-col-punto" style={{ background: tono[1] }} />
+                  <Icon name={col.icon} size={16} color={tono[1]} />
+                  <span className="dx-col-nombre">{col.label}</span>
+                  <span
+                    className="dx-col-cuenta"
+                    style={{
+                      background: items.length ? tono[0] : 'var(--sf)',
+                      color: items.length ? tono[1] : 'var(--mu)',
+                    }}
+                  >
                     {items.length}
                   </span>
                 </div>
 
-                {items.length === 0 && (
-                  <div style={{ padding: '26px 14px', textAlign: 'center', borderRadius: 'var(--sh-md)', border: '1px dashed var(--outline-variant)', fontSize: 12, color: 'var(--on-surface-variant)' }}>
-                    Sin pedidos aquí
-                  </div>
-                )}
+                {items.length === 0 && <div className="dx-col-vacia">{col.vacio}</div>}
 
                 {items.map((r) => (
                   <OrderCard key={r.id} req={r} couriers={couriers} onAssign={assign} onAdvance={advance} onOpen={setDetail} />

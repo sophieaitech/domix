@@ -187,3 +187,126 @@ a{color:var(--green);text-decoration:none}
 /* Modo oscuro del mapa sin cambiar de proveedor: se invierten las teselas
    y se corrige el tono, para que el agua siga viéndose azul. */
 .dx-mapa-oscuro .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.7)}
+
+/* ============================================================
+   Tablero de pedidos en vivo
+   Tarjetas de vidrio sobre columnas con cabecera fija. La jerarquía
+   la marca el color: naranja para lo urgente, verde para lo que fluye.
+   ============================================================ */
+
+.dx-tablero{
+  display:flex; gap:14px; align-items:flex-start;
+  overflow-x:auto; padding-bottom:8px;
+  scroll-snap-type:x proximity;
+}
+.dx-columna{
+  flex:none; width:288px; scroll-snap-align:start;
+  display:flex; flex-direction:column; gap:10px;
+}
+
+.dx-col-cabeza{
+  position:sticky; top:0; z-index:5;
+  display:flex; align-items:center; gap:9px;
+  padding:11px 13px; border-radius:14px;
+  background:color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter:blur(14px) saturate(150%);
+  -webkit-backdrop-filter:blur(14px) saturate(150%);
+  border:1px solid var(--bd2);
+}
+.dx-col-punto{width:8px;height:8px;border-radius:50%;flex:none}
+.dx-col-nombre{flex:1;font:800 12.5px Manrope,sans-serif;letter-spacing:-.01em}
+.dx-col-cuenta{
+  min-width:22px;height:22px;padding:0 7px;border-radius:99px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+}
+
+/* --- Tarjeta --- */
+.dx-pedido{
+  position:relative; cursor:pointer; padding:14px;
+  border-radius:16px; border:1px solid var(--bd2);
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 1px 2px rgba(10,10,10,.04);
+  transition:transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease, border-color .18s ease;
+}
+.dx-pedido:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 28px rgba(10,10,10,.10);
+  border-color:var(--bd);
+}
+.dx-pedido:active{transform:translateY(0)}
+
+/* Turbo se distingue por el naranja de la caja del logo */
+.dx-pedido[data-turbo="si"]{
+  border-color:color-mix(in srgb, var(--orange) 45%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--orange) 7%, transparent), transparent 42%),
+    color-mix(in srgb, var(--bg) 90%, transparent);
+}
+.dx-pedido[data-tarde="si"]::after{
+  content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px;
+  border-radius:0 3px 3px 0; background:var(--orange);
+}
+
+.dx-pedido-icono{
+  width:32px;height:32px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--sf); color:var(--mu);
+}
+.dx-pedido[data-turbo="si"] .dx-pedido-icono{background:var(--orangeS);color:var(--orange)}
+
+.dx-turbo-chip{
+  display:inline-flex;align-items:center;gap:4px;flex:none;
+  height:22px;padding:0 9px;border-radius:99px;
+  background:linear-gradient(135deg,#F79A4B,#E8720E);
+  color:#fff;font:800 9.5px Manrope,sans-serif;letter-spacing:.06em;
+  box-shadow:0 2px 8px color-mix(in srgb, var(--orange) 45%, transparent);
+}
+
+.dx-tarde{animation:dxLatido 2s ease-in-out infinite}
+@keyframes dxLatido{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes dxEntra{
+  0%{opacity:0;transform:translateY(-10px) scale(.97)}
+  60%{opacity:1;transform:translateY(2px) scale(1.005)}
+  100%{opacity:1;transform:none}
+}
+
+/* Selector de repartidor: parece un botón, no un formulario */
+.dx-asignar{
+  display:flex;align-items:center;gap:7px;margin-top:11px;
+  height:38px;padding:0 11px;border-radius:11px;
+  background:var(--orangeS);
+  border:1px solid color-mix(in srgb, var(--orange) 28%, transparent);
+  transition:background .15s ease;
+}
+.dx-asignar:hover{background:color-mix(in srgb, var(--orange) 16%, transparent)}
+.dx-asignar select{
+  flex:1;min-width:0;height:100%;cursor:pointer;
+  font:700 11.5px Manrope,sans-serif;color:var(--orange);
+  appearance:none;-webkit-appearance:none;
+}
+.dx-asignar select option{color:var(--tx);background:var(--bg)}
+
+.dx-avatar{
+  width:22px;height:22px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--greenS);color:var(--green);
+  font:800 9.5px Manrope,sans-serif;
+}
+
+.dx-avanzar{
+  display:inline-flex;align-items:center;gap:5px;flex:none;
+  height:30px;padding:0 11px;border-radius:9px;
+  background:var(--sf);color:var(--tx);
+  font:700 11px Manrope,sans-serif;
+  transition:background .15s ease,transform .15s ease;
+}
+.dx-avanzar:hover{background:var(--sf2);transform:translateX(1px)}
+
+.dx-col-vacia{
+  padding:26px 16px;text-align:center;border-radius:14px;
+  border:1px dashed var(--bd);
+  font:500 11.5px/1.5 Manrope,sans-serif;color:var(--mu);
+}
