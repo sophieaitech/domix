@@ -11,7 +11,10 @@ const SECONDS = 40;
 
 /* Oferta entrante a pantalla completa, con cuenta regresiva.
    Es la pantalla que ve el repartidor cuando le suena un pedido. */
-export default function IncomingOffer({ request, onAccept, onDismiss }) {
+/* Se distingue vencerse de rechazar: un pedido que se vencio porque el
+   repartidor iba manejando vuelve a ofrecerse; uno que rechazo a proposito,
+   no. */
+export default function IncomingOffer({ request, onAccept, onExpire, onReject }) {
   const [left, setLeft] = useState(SECONDS);
   const notified = useRef(false);
 
@@ -33,8 +36,8 @@ export default function IncomingOffer({ request, onAccept, onDismiss }) {
   // El descarte va en su propio efecto: llamarlo dentro del actualizador de
   // estado dispararía un setState del padre durante el render de este hijo.
   useEffect(() => {
-    if (left === 0) onDismiss?.();
-  }, [left, onDismiss]);
+    if (left === 0) onExpire?.();
+  }, [left, onExpire]);
 
   if (!request) return null;
 
@@ -120,7 +123,7 @@ export default function IncomingOffer({ request, onAccept, onDismiss }) {
 
       <div style={{ flex: 'none', display: 'flex', gap: 11, padding: '14px 20px 18px', borderTop: '1px solid var(--outline-variant)', background: 'var(--surface-lowest)' }}>
         <button
-          onClick={onDismiss}
+          onClick={onReject}
           style={{ flex: 'none', width: 60, height: 54, borderRadius: 'var(--sh-md)', border: '1px solid var(--outline)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <Icon name="close" size={23} color="var(--on-surface-variant)" />

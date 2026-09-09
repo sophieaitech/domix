@@ -15,6 +15,11 @@ import { requestNotificationPermission, notificationPermission, pushNotify } fro
 import { routeBetween } from '../../lib/geo';
 
 const ACTIVE = ['assigned', 'picked_up', 'in_progress'];
+
+// Cuánto esperar antes de volver a ofrecer un pedido que se venció, y
+// cuánto silenciarlo si el repartidor lo rechazó a propósito.
+const REOFRECER_MS = 60 * 1000;
+const RECHAZO_MS = 60 * 60 * 1000;
 const NEXT = { assigned: 'picked_up', picked_up: 'in_progress', in_progress: 'delivered' };
 const NEXT_LABEL = { assigned: 'Ya lo recogí', picked_up: 'Voy en camino', in_progress: 'Entregado' };
 
@@ -28,7 +33,8 @@ function HomeContent() {
   const [toggling, setToggling] = useState(false);
   const [loading, setLoading] = useState(true);
   const [perm, setPerm] = useState('default');
-  const seen = useRef(new Set());
+  const seen = useRef(new Map());
+  const [latido, setLatido] = useState(0);
 
   const isOnline = courierProfile?.status === 'online';
 
@@ -61,15 +67,31 @@ function HomeContent() {
     return () => clearInterval(t);
   }, [isDemo, isOnline, loadLive]);
 
-  /* ---- Un pedido nuevo abre la oferta a pantalla completa ---- */
+  /* ---- Un pedido nuevo abre la oferta a pantalla completa ----
+     `seen` guarda hasta cuándo NO volver a ofrecer cada pedido. Un pedido
+     que se venció vuelve tras una pausa corta: si el repartidor iba
+     manejando y no alcanzó a aceptar, no se puede quedar tirado. Uno que
+     rechazó a propósito no vuelve en toda la sesión. */
   useEffect(() => {
     if (!isOnline || offer) return;
-    const fresh = open.find((r) => !seen.current.has(r.id));
+    const ahora = Date.now();
+    const fresh = open.find((r) => {
+      const hasta = seen.current.get(r.id);
+      return hasta === undefined || ahora >= hasta;
+    });
     if (fresh) {
-      seen.current.add(fresh.id);
+      seen.current.set(fresh.id, ahora + RECHAZO_MS);
       setOffer(fresh);
     }
-  }, [open, isOnline, offer]);
+  }, [open, isOnline, offer, latido]);
+
+  /* Se revisa cada tanto para que un pedido en pausa vuelva a ofrecerse
+     aunque no haya entrado ningún pedido nuevo que dispare el efecto. */
+  useEffect(() => {
+    if (!isOnline) return;
+    const t = setInterval(() => setLatido((n) => n + 1), 15000);
+    return () => clearInterval(t);
+  }, [isOnline]);
 
   /* ---- Ruta del pedido activo, para el mapa de seguimiento ---- */
   const current = active[0];
@@ -104,7 +126,7 @@ function HomeContent() {
   const simulate = async (turbo = false) => {
     if (perm !== 'granted') setPerm(await requestNotificationPermission());
     const req = demoInject({ turbo });
-    seen.current.add(req.id);
+    seen.current.set(req.id, Date.now() + RECHAZO_MS);
     setOffer(req);
   };
 
@@ -287,7 +309,21 @@ function HomeContent() {
         </div>
       </div>
 
-      {offer && <IncomingOffer request={offer} onAccept={accept} onDismiss={() => setOffer(null)} />}
+      {offer && (
+        <IncomingOffer
+          request={offer}
+          onAccept={accept}
+          onExpire={() => {
+            // Vuelve a la fila: puede que solo iba manejando.
+            seen.current.set(offer.id, Date.now() + REOFRECER_MS);
+            setOffer(null);
+          }}
+          onReject={() => {
+            seen.current.set(offer.id, Date.now() + RECHAZO_MS);
+            setOffer(null);
+          }}
+        />
+      )}
 
       <BottomNav badges={{ '/entregas': active.length }} />
     </>
