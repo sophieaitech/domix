@@ -157,3 +157,44 @@ export function TopBack({ title, onBack, right }) {
     </div>
   );
 }
+
+/* Hueco con la forma de lo que va a llegar. Se usa mientras carga en
+   vez de dejar la pantalla en blanco: la espera se siente más corta
+   cuando se ve la silueta de lo que viene. */
+export function Esqueleto({ w = '100%', h = 16, r = 12, style }) {
+  return <span className="dx-esqueleto" style={{ display: 'block', width: w, height: h, borderRadius: r, ...style }} />;
+}
+
+/* Control segmentado con corredera, como el selector de tipo de viaje
+   de Uber. La corredera se mueve; las etiquetas solo cambian de color. */
+export function Segmento({ opciones, valor, onChange }) {
+  const i = Math.max(0, opciones.findIndex((o) => o.id === valor));
+  const ancho = 100 / opciones.length;
+
+  return (
+    <div className="dx-segmento">
+      <span
+        className="dx-corredera"
+        style={{ width: `calc(${ancho}% - 4px)`, transform: `translateX(calc(${i * 100}% + ${i * 4}px))` }}
+      />
+      {opciones.map((o) => (
+        <button key={o.id} data-on={o.id === valor} onClick={() => onChange(o.id)}>
+          {o.img && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={o.img}
+              alt=""
+              style={{
+                width: 24, height: 24, objectFit: 'contain',
+                filter: o.id === valor ? 'none' : 'grayscale(1)',
+                opacity: o.id === valor ? 1 : 0.45,
+                transition: 'filter .2s, opacity .2s',
+              }}
+            />
+          )}
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

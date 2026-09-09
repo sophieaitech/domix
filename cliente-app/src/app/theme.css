@@ -180,3 +180,87 @@ a{color:var(--green);text-decoration:none}
 /* Modo oscuro del mapa sin cambiar de proveedor: se invierten las teselas
    y se corrige el tono, para que el agua siga viéndose azul. */
 .dx-mapa-oscuro .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.92) saturate(.7)}
+
+/* ------------------------------------------------------------------
+   El marco de teléfono es una ayuda para revisar la app desde un
+   computador. En un celular de verdad no debe aparecer.
+
+   Esto lo decide la media query y no el JavaScript, a propósito: el
+   navegador la aplica antes de pintar, así que desde el teléfono el
+   marco no llega a dibujarse ni un instante. Antes se veía la app
+   encapsulada y luego acomodándose sola.
+
+   display:contents hace desaparecer la caja del marco dejando dentro
+   lo que importa, así que ancho, alto, escala y sombras se ignoran
+   solos sin tener que deshacerlos uno por uno.
+   ------------------------------------------------------------------ */
+@media (max-width:639px){
+  .dx-device{display:contents}
+  .dx-island,.dx-status,.dx-homebar{display:none}
+  .dx-screen{position:relative;inset:auto;width:100%;height:100dvh;padding:0}
+}
+
+@media (min-width:640px){
+  .dx-device{
+    width:440px;height:956px;
+    transform:scale(var(--dx-fit,.8));transform-origin:top center;
+    margin:20px var(--dx-hueco-x,0) var(--dx-hueco-y,0);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Movimiento y carga
+
+   Lo que separa una app que se siente rápida de una que se siente lenta
+   no suele ser el tiempo real: es si el usuario ve algo mientras espera.
+   Un hueco gris con la forma de lo que va a llegar se lee como "ya casi";
+   una pantalla en blanco se lee como "se trabó".
+   ------------------------------------------------------------------ */
+@keyframes dxBrillo{100%{transform:translateX(100%)}}
+.dx-esqueleto{
+  position:relative;overflow:hidden;border-radius:12px;
+  background:var(--sf);
+}
+.dx-esqueleto::after{
+  content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.045),transparent);
+  animation:dxBrillo 1.4s infinite;
+}
+:root[data-theme="dark"] .dx-esqueleto::after{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+}
+
+/* Entrada escalonada: las secciones aparecen en orden, no todas de
+   golpe. Da la sensación de que la pantalla se arma sola. */
+@keyframes dxSube{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.dx-entra{animation:dxSube .34s cubic-bezier(.2,.8,.2,1) both}
+
+/* Respuesta al toque. Uber, DiDi y Yango hunden la tarjeta un poco al
+   presionarla; sin eso el toque se siente muerto en un celular. */
+.dx-toque{transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .16s ease}
+.dx-toque:active{transform:scale(.975)}
+
+/* Punto que late, para lo que está pasando ahora mismo. */
+@keyframes dxPulso{0%{box-shadow:0 0 0 0 rgba(47,122,36,.5)}70%{box-shadow:0 0 0 9px rgba(47,122,36,0)}100%{box-shadow:0 0 0 0 rgba(47,122,36,0)}}
+.dx-vivo{animation:dxPulso 2s infinite}
+
+/* Control segmentado, como el selector de tipo de viaje. */
+.dx-segmento{
+  position:relative;display:flex;padding:4px;border-radius:99px;background:var(--sf);
+}
+.dx-segmento button{
+  flex:1;height:42px;border-radius:99px;z-index:1;
+  font:700 14.5px Manrope,sans-serif;letter-spacing:-.02em;color:var(--mu);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:color .2s var(--ease);
+}
+.dx-segmento button[data-on="true"]{color:var(--tx)}
+.dx-segmento .dx-corredera{
+  position:absolute;top:4px;bottom:4px;left:4px;border-radius:99px;
+  background:var(--bg);box-shadow:var(--sh2);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1),width .28s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Barra de scroll horizontal invisible pero funcional. */
+.sb::-webkit-scrollbar{display:none}
+.sb{scrollbar-width:none}

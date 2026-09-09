@@ -3,23 +3,20 @@
 import { useTheme } from '../context/ThemeProvider';
 import { Icon } from './ui';
 
-const MODES = {
-  light: { icon: 'light_mode', label: 'Claro' },
-  dark: { icon: 'dark_mode', label: 'Oscuro' },
-  auto: { icon: 'brightness_auto', label: 'Automático' },
-};
-
-/* Un solo botón que rota entre claro → oscuro → automático. */
+/* Un interruptor de dos posiciones. Muestra la luna cuando está en
+   claro (lo que va a pasar si lo tocas) y el sol cuando está en oscuro.
+   Es la convención de casi todas las apps: el icono anuncia el destino,
+   no el estado actual. */
 export default function ThemeToggle({ compact = false }) {
-  const { theme, cycleTheme, ready } = useTheme();
-  const m = MODES[theme] || MODES.auto;
+  const { esOscuro, cycleTheme, ready } = useTheme();
   const size = compact ? 34 : 38;
+  const destino = esOscuro ? 'Claro' : 'Oscuro';
 
   return (
     <button
       onClick={cycleTheme}
-      title={`Tema: ${m.label} (clic para cambiar)`}
-      aria-label={`Cambiar tema, actualmente ${m.label}`}
+      title={`Cambiar a modo ${destino.toLowerCase()}`}
+      aria-label={`Cambiar a modo ${destino.toLowerCase()}`}
       style={{
         width: size, height: size, borderRadius: 'var(--sh-sm)', flex: 'none',
         background: 'var(--surface-container)', border: '1px solid var(--outline-variant)',
@@ -27,7 +24,12 @@ export default function ThemeToggle({ compact = false }) {
         opacity: ready ? 1 : 0, transition: 'opacity .2s var(--ease)',
       }}
     >
-      <Icon name={m.icon} size={compact ? 18 : 20} fill color="var(--on-surface-variant)" />
+      <Icon
+        name={esOscuro ? 'light_mode' : 'dark_mode'}
+        size={compact ? 18 : 20}
+        fill
+        color="var(--on-surface-variant)"
+      />
     </button>
   );
 }

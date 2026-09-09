@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNav from '../../components/BottomNav';
 import ModeSwitch from '../../components/ModeSwitch';
-import { Row, Pill, Button, Field, Spinner, EmptyState } from '../../components/ui';
+import { Row, Pill, Button, Field, EmptyState, Esqueleto } from '../../components/ui';
 import { useClientSession } from '../../context/ClientSessionProvider';
 import { useAppMode } from '../../context/AppModeProvider';
-import { fetchMyRequests, listDemoRequests, serviceInfo, STATUS_STEPS } from '../../lib/services';
+import { useIdioma } from '../../context/IdiomaProvider';
+import { fetchMyRequests, listDemoRequests, serviceInfo } from '../../lib/services';
 import { money } from '../../lib/pricing';
 
-const TONE = {
+const TONO = {
   requested: 'default',
   assigned: 'navy',
   picked_up: 'navy',
@@ -19,10 +20,21 @@ const TONE = {
   cancelled: 'red',
 };
 
+const CLAVE_ESTADO = {
+  requested: 'recibido',
+  assigned: 'asignado',
+  picked_up: 'recogido',
+  in_progress: 'enCamino',
+  delivered: 'entregado',
+  cancelled: 'cancelado',
+};
+
 export default function ActividadPage() {
   const router = useRouter();
   const { client, ready, saveClient } = useClientSession();
   const { isDemo } = useAppMode();
+  const { t } = useIdioma();
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [phone, setPhone] = useState('');
@@ -32,8 +44,8 @@ export default function ActividadPage() {
     if (isDemo) {
       setRows(listDemoRequests(client?.phone));
       setLoading(false);
-      const t = setInterval(() => setRows(listDemoRequests(client?.phone)), 4000);
-      return () => clearInterval(t);
+      const t2 = setInterval(() => setRows(listDemoRequests(client?.phone)), 4000);
+      return () => clearInterval(t2);
     }
     if (!client?.phone) return setLoading(false);
     fetchMyRequests(client.phone).then(setRows).catch(() => setRows([])).finally(() => setLoading(false));
@@ -49,56 +61,70 @@ export default function ActividadPage() {
 
   return (
     <>
-      <div className="sb" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '10px 0 100px', animation: 'trFade .3s ease' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 18px' }}>
-          <div style={{ font: '800 26px Manrope,sans-serif', letterSpacing: '-.035em' }}>Actividad</div>
+      <div className="sb" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '10px 0 104px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 4px', animation: 'dxSube .34s cubic-bezier(.2,.8,.2,1) both' }}>
+          <div style={{ font: '800 26px Manrope,sans-serif', letterSpacing: '-.035em' }}>{t('actividad.titulo')}</div>
           <ModeSwitch compact />
         </div>
+        <div style={{ padding: '0 16px 20px', font: '500 13px Manrope,sans-serif', color: 'var(--mu)' }}>
+          {t('actividad.subtitulo')}
+        </div>
 
+        {/* Sin celular no hay nada que buscar. No es registro: es la única
+            forma de encontrar los pedidos de alguien que nunca creó cuenta. */}
         {ready && !client?.phone && !isDemo && (
           <div style={{ padding: '0 16px' }}>
-            <div style={{ borderRadius: 16, background: 'var(--sf)', padding: 18 }}>
-              <div style={{ font: '700 15px Manrope,sans-serif', marginBottom: 4 }}>Consulta tus pedidos</div>
-              <div style={{ font: '500 12.5px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginBottom: 14 }}>
-                Sin cuenta ni contraseña: usamos tu celular solo para encontrarlos.
+            <div style={{ borderRadius: 18, background: 'var(--sf)', padding: 19 }}>
+              <div style={{ font: '700 15px Manrope,sans-serif', marginBottom: 5 }}>{t('actividad.consulta')}</div>
+              <div style={{ font: '500 12.5px/1.5 Manrope,sans-serif', color: 'var(--mu)', marginBottom: 15 }}>
+                {t('actividad.consultaTexto')}
               </div>
               <form onSubmit={buscar} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <Field required icon="call" type="tel" placeholder="315 792 4906" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                <Button type="submit" icon="search">Ver mis pedidos</Button>
+                <Button type="submit" icon="search">{t('actividad.verPedidos')}</Button>
               </form>
             </div>
           </div>
         )}
 
-        {loading && client?.phone && <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Spinner /></div>}
+        {/* Siluetas mientras carga: la espera se siente más corta que
+            frente a una pantalla vacía. */}
+        {loading && client?.phone && (
+          <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {[0, 1, 2].map((i) => <Esqueleto key={i} h={72} r={14} />)}
+          </div>
+        )}
 
         {!loading && client?.phone && rows.length === 0 && (
           <EmptyState
             icon="receipt_long"
-            title="Aún no tienes pedidos"
-            body="Cuando pidas un servicio, aquí verás su estado y su código de seguimiento."
-            action={<Button full={false} icon="add" onClick={() => router.push('/pedir')}>Pedir un servicio</Button>}
+            title={t('actividad.vacioTitulo')}
+            body={t('actividad.vacioTexto')}
+            action={<Button full={false} icon="add" onClick={() => router.push('/pedir')}>{t('actividad.pedirAlgo')}</Button>}
           />
         )}
 
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {rows.map((r) => {
+          {rows.map((r, i) => {
             const info = serviceInfo(r.service_type);
-            const label = r.status === 'cancelled' ? 'Cancelado' : STATUS_STEPS.find((s) => s.id === r.status)?.label || r.status;
+            const clave = CLAVE_ESTADO[r.status] || 'recibido';
             return (
-              <Row
-                key={r.id || r.tracking_code}
-                image={info.img}
-                title={info.label}
-                subtitle={r.dropoff_address}
-                onClick={() => router.push(`/seguimiento/${r.tracking_code}`)}
-                right={
-                  <span style={{ flex: 'none', textAlign: 'right' }}>
-                    <span style={{ display: 'block', font: '800 15px Manrope,sans-serif', letterSpacing: '-.02em' }}>{money(r.price)}</span>
-                    <span style={{ display: 'block', marginTop: 5 }}><Pill tone={TONE[r.status]}>{label}</Pill></span>
-                  </span>
-                }
-              />
+              <div key={r.id || r.tracking_code} style={{ animation: `dxSube .34s cubic-bezier(.2,.8,.2,1) ${Math.min(i, 6) * 40}ms both` }}>
+                <Row
+                  image={info.img}
+                  title={t(`servicios.${r.service_type}`)}
+                  subtitle={r.dropoff_address}
+                  onClick={() => router.push(`/seguimiento/${r.tracking_code}`)}
+                  right={
+                    <span style={{ flex: 'none', textAlign: 'right' }}>
+                      <span className="num" style={{ display: 'block', font: '800 15px Manrope,sans-serif', letterSpacing: '-.02em' }}>{money(r.price)}</span>
+                      <span style={{ display: 'block', marginTop: 5 }}>
+                        <Pill tone={TONO[r.status]}>{t(`actividad.${clave}`)}</Pill>
+                      </span>
+                    </span>
+                  }
+                />
+              </div>
             );
           })}
         </div>

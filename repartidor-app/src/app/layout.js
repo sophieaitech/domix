@@ -28,6 +28,20 @@ const ICONOS_URL =
   + `&icon_names=${ICONOS}`
   + '&display=block';
 
+
+/* Se ejecuta antes de pintar. Si esto viviera en un efecto de React, la
+   app arrancaría en claro y voltearía a oscuro un instante después:
+   un parpadeo blanco cada vez que se abre. */
+/* Nota: <html> lleva suppressHydrationWarning porque este guion escribe
+   data-theme antes de que React arranque. El HTML del servidor y el del
+   navegador no coinciden a propósito, y sin eso React lo reporta como
+   error en cada carga. */
+const TEMA_INICIAL = `(function(){try{
+  var t=localStorage.getItem('domix_theme');
+  if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+  document.documentElement.setAttribute('data-theme',t);
+}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+
 export const metadata = {
   title: 'Domix Repartidor',
   description: 'App de repartidores de Domix — Mensajería & Logística',
@@ -38,8 +52,9 @@ export const viewport = { themeColor: '#17140F', width: 'device-width', initialS
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es-CO">
+    <html lang="es-CO" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: TEMA_INICIAL }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href={FUENTES} rel="stylesheet" />

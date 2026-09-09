@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon, Spinner } from './ui';
+import { useIdioma } from '../context/IdiomaProvider';
 import MarcarEnMapa from './MarcarEnMapa';
 import { searchAddress, currentPosition, reverseGeocode } from '../lib/geo';
 import { buscarLugaresLocales } from '../lib/lugares';
@@ -17,6 +18,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
   const [locating, setLocating] = useState(false);
   const [marcando, setMarcando] = useState(false);
   const [recientes, setRecientes] = useState([]);
+  const { t } = useIdioma();
 
   useEffect(() => { setRecientes(leerRecientes()); }, []);
   const timer = useRef(null);
@@ -94,7 +96,7 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
         {allowLocate && (
           <button type="button" onClick={locate} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 800, color: 'var(--secondary)' }}>
             <Icon name={locating ? 'sync' : 'my_location'} size={15} fill />
-            {locating ? 'Ubicando…' : 'Usar mi ubicación'}
+            {locating ? t('direccion.ubicando') : t('direccion.usarUbicacion')}
           </button>
         )}
       </span>
@@ -120,13 +122,13 @@ export default function AddressField({ label, icon = 'location_on', placeholder,
           style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 7, fontSize: 11.5, fontWeight: 800, color: 'var(--secondary)' }}
         >
           <Icon name="add_location_alt" size={15} fill />
-          No aparece mi dirección, marcarla en el mapa
+          {t('direccion.noAparece')}
         </button>
       )}
 
       {marcando && (
         <MarcarEnMapa
-          titulo={label || 'Marcar dirección'}
+          titulo={label || t('direccion.marcarDireccion')}
           inicial={point}
           onConfirmar={confirmarPin}
           onCerrar={() => setMarcando(false)}

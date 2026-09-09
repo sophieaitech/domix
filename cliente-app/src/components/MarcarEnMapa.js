@@ -5,11 +5,13 @@ import { createPortal } from 'react-dom';
 import { Icon, Button } from './ui';
 import { loadLeaflet } from './MapView';
 import { BUENAVENTURA, reverseGeocode } from '../lib/geo';
+import { useIdioma } from '../context/IdiomaProvider';
 
 /* Muchas direcciones de Buenaventura no están en OpenStreetMap. En vez de
    inventarles coordenadas, el cliente arrastra el mapa hasta su casa y el
    punto queda exacto. */
 export default function MarcarEnMapa({ titulo, inicial, onConfirmar, onCerrar }) {
+  const { t } = useIdioma();
   const nodo = useRef(null);
   const mapa = useRef(null);
   const limpieza = useRef(null);
@@ -118,7 +120,7 @@ export default function MarcarEnMapa({ titulo, inicial, onConfirmar, onCerrar })
         </label>
 
         <Button onClick={confirmar} disabled={buscandoRef} icon="check" style={{ marginTop: 12 }}>
-          {buscandoRef ? 'Guardando…' : 'Confirmar este punto'}
+          {buscandoRef ? t('direccion.guardando') : t('direccion.confirmarPunto')}
         </Button>
       </div>
     </div>,

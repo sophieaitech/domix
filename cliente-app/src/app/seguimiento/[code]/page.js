@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MapView from '../../../components/MapView';
-import { Icon, TopBack, Button, Pill, Spinner, EmptyState } from '../../../components/ui';
+import { Icon, Button, Pill, EmptyState, Esqueleto } from '../../../components/ui';
 import { useAppMode } from '../../../context/AppModeProvider';
+import { useIdioma } from '../../../context/IdiomaProvider';
 import { trackRequest, loadDemoRequest, serviceInfo, STATUS_STEPS } from '../../../lib/services';
 import { routeBetween } from '../../../lib/geo';
 import { money } from '../../../lib/pricing';
@@ -12,118 +13,178 @@ import { pushNotify } from '../../../lib/notify';
 
 const WHATSAPP = 'https://wa.me/573157924906';
 
+const CLAVE = {
+  requested: 'buscando',
+  assigned: 'asignado',
+  picked_up: 'recogido',
+  in_progress: 'enCamino',
+  delivered: 'entregado',
+  cancelled: 'cancelado',
+};
+
 export default function SeguimientoPage() {
   const { code } = useParams();
   const router = useRouter();
   const { isDemo } = useAppMode();
+  const { t } = useIdioma();
+
   const [req, setReq] = useState(undefined);
   const [route, setRoute] = useState([]);
   const [error, setError] = useState('');
-  const [lastStatus, setLastStatus] = useState(null);
+  const [ultimoEstado, setUltimoEstado] = useState(null);
 
   useEffect(() => {
-    let alive = true;
-    const load = async () => {
+    let vivo = true;
+    const cargar = async () => {
       try {
         const r = isDemo ? loadDemoRequest(code) : await trackRequest(code);
-        if (alive) setReq(r);
+        if (vivo) setReq(r);
       } catch (e) {
-        if (alive) setError(e.message);
+        if (vivo) setError(e.message);
       }
     };
-    load();
-    const t = setInterval(load, isDemo ? 3000 : 8000);
-    return () => { alive = false; clearInterval(t); };
+    cargar();
+    const t2 = setInterval(cargar, isDemo ? 3000 : 8000);
+    return () => { vivo = false; clearInterval(t2); };
   }, [code, isDemo]);
 
+  /* Avisar solo cuando el estado cambia de verdad, no la primera vez que
+     se abre la pantalla: nadie quiere una notificación por mirar. */
   useEffect(() => {
-    if (!req?.status || req.status === lastStatus) return;
-    if (lastStatus !== null) {
-      const step = STATUS_STEPS.find((s) => s.id === req.status);
-      if (step) pushNotify(`Pedido ${step.label.toLowerCase()}`, { body: step.desc, tag: `estado-${code}` });
+    if (!req?.status || req.status === ultimoEstado) return;
+    if (ultimoEstado !== null) {
+      const paso = STATUS_STEPS.find((s) => s.id === req.status);
+      if (paso) pushNotify(paso.label, { body: paso.desc, tag: `estado-${code}` });
     }
-    setLastStatus(req.status);
-  }, [req?.status, lastStatus, code]);
+    setUltimoEstado(req.status);
+  }, [req?.status, ultimoEstado, code]);
 
   const pickup = req?.pickup_lat != null ? { lat: req.pickup_lat, lon: req.pickup_lon } : req?.pickup_point || null;
   const dropoff = req?.dropoff_lat != null ? { lat: req.dropoff_lat, lon: req.dropoff_lon } : req?.dropoff_point || null;
   const courier = req?.courier_lat != null ? { lat: req.courier_lat, lon: req.courier_lon } : null;
 
   useEffect(() => {
-    let alive = true;
+    let vivo = true;
     if (!pickup || !dropoff) return;
-    routeBetween(pickup, dropoff).then((r) => alive && setRoute(r.coords));
-    return () => { alive = false; };
+    routeBetween(pickup, dropoff).then((r) => vivo && setRoute(r.coords));
+    return () => { vivo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickup?.lat, pickup?.lon, dropoff?.lat, dropoff?.lon]);
 
-  const stepIndex = req ? STATUS_STEPS.findIndex((s) => s.id === req.status) : -1;
-  const cancelled = req?.status === 'cancelled';
+  const paso = req ? STATUS_STEPS.findIndex((s) => s.id === req.status) : -1;
+  const cancelado = req?.status === 'cancelled';
+  const entregado = req?.status === 'delivered';
   const info = req ? serviceInfo(req.service_type) : null;
+  const clave = CLAVE[req?.status] || 'buscando';
 
   return (
     <>
-      <TopBack title="Tu pedido" onBack={() => router.push('/')} />
+      {/* Volver flotando sobre el mapa, como en las apps de viaje: la
+          cabecera fija robaría altura justo donde importa ver el mapa. */}
+      <button
+        aria-label={t('comun.volver')}
+        onClick={() => router.push('/')}
+        style={{
+          position: 'absolute', top: 14, left: 14, zIndex: 40,
+          width: 40, height: 40, borderRadius: '50%', background: 'var(--bg)',
+          boxShadow: 'var(--sh)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        <Icon name="arrow_back" size={20} />
+      </button>
 
-      <div className="sb" style={{ flex: 1, overflowY: 'auto', padding: '0 0 30px', animation: 'trFade .3s ease' }}>
-        {req === undefined && !error && <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><Spinner /></div>}
+      <div className="sb" style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+        {req === undefined && !error && (
+          <>
+            <Esqueleto h={300} r={0} />
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Esqueleto h={26} w="55%" />
+              <Esqueleto h={84} />
+              <Esqueleto h={120} />
+            </div>
+          </>
+        )}
 
         {(error || req === null) && (
-          <EmptyState
-            icon="search_off"
-            title="No encontramos el pedido"
-            body={`Ningún pedido con el código ${code}. Revisa el código o escríbenos.`}
-            action={<Button full={false} variant="green" icon="chat" onClick={() => window.open(WHATSAPP, '_blank')}>Escribir por WhatsApp</Button>}
-          />
+          <div style={{ paddingTop: 40 }}>
+            <EmptyState
+              icon="search_off"
+              title={t('seguimiento.noEncontrado')}
+              body={`${t('seguimiento.noEncontradoTexto')} · ${code}`}
+              action={
+                <Button full={false} variant="green" icon="chat" onClick={() => window.open(WHATSAPP, '_blank')}>
+                  {t('seguimiento.escribirWhatsapp')}
+                </Button>
+              }
+            />
+          </div>
         )}
 
         {req && (
           <>
-            {/* Mapa a sangre, como en las apps de viaje */}
+            {/* El mapa manda. Ocupa casi la mitad de la pantalla y la hoja
+                de información se le monta encima con las esquinas
+                redondeadas, que es lo que hace que se sienta una capa
+                sobre el mundo y no dos bloques pegados. */}
             {(pickup || dropoff) && (
               <MapView
-                height={250}
+                height="46vh"
                 pickup={pickup}
                 dropoff={dropoff}
                 courier={courier}
                 route={route}
-                style={{ borderRadius: 0, border: 'none', borderBottom: '1px solid var(--bd)' }}
+                style={{ borderRadius: 0, border: 'none' }}
               />
             )}
 
-            <div style={{ padding: '18px 16px 0' }}>
-              {/* Estado actual */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                <span style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+            <div
+              style={{
+                position: 'relative', marginTop: (pickup || dropoff) ? -26 : 0,
+                borderRadius: '26px 26px 0 0', background: 'var(--bg)',
+                boxShadow: '0 -14px 34px rgba(0,0,0,.13)',
+                padding: '10px 16px 30px', minHeight: '54vh',
+              }}
+            >
+              <span style={{ display: 'block', width: 38, height: 4, borderRadius: 99, background: 'var(--sf2)', margin: '0 auto 16px' }} />
+
+              {/* Qué está pasando ahora */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 18 }}>
+                <span style={{ width: 54, height: 54, borderRadius: 16, background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={info.img} alt="" style={{ width: 38, height: 38, objectFit: 'contain' }} />
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ font: '800 20px Manrope,sans-serif', letterSpacing: '-.03em' }}>
-                    {cancelled ? 'Pedido cancelado' : STATUS_STEPS[stepIndex]?.label}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {!cancelado && !entregado && (
+                      <span className="dx-vivo" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', flex: 'none' }} />
+                    )}
+                    <span style={{ font: '800 20px Manrope,sans-serif', letterSpacing: '-.03em' }}>
+                      {t(`seguimiento.${clave}`)}
+                    </span>
                   </div>
-                  <div style={{ font: '500 12.5px/1.4 Manrope,sans-serif', color: 'var(--mu)', marginTop: 2 }}>
-                    {cancelled ? 'Este pedido fue cancelado.' : STATUS_STEPS[stepIndex]?.desc}
+                  <div style={{ font: '500 12.5px/1.45 Manrope,sans-serif', color: 'var(--mu)', marginTop: 3 }}>
+                    {t(`seguimiento.${clave}Desc`)}
                   </div>
                 </div>
                 {req.turbo && <Pill icon="bolt" tone="navy">TURBO</Pill>}
               </div>
 
-              {/* Código de entrega: lo que el cliente le dicta al repartidor.
-                  Se muestra grande mientras el pedido siga en curso. */}
-              {req.delivery_pin && !cancelled && req.status !== 'delivered' && (
-                <div style={{ borderRadius: 16, background: 'var(--inv)', color: 'var(--invtx)', padding: '18px 16px', marginBottom: 18, textAlign: 'center' }}>
-                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.14em', opacity: 0.6 }}>
-                    CÓDIGO DE ENTREGA
+              {/* El código de entrega: lo único que el cliente tiene que
+                  hacer, así que va antes que cualquier otro dato. */}
+              {req.delivery_pin && !cancelado && !entregado && (
+                <div style={{ borderRadius: 18, background: 'var(--inv)', color: 'var(--invtx)', padding: '19px 16px', marginBottom: 18, textAlign: 'center' }}>
+                  <div style={{ font: '700 10.5px Manrope,sans-serif', letterSpacing: '.14em', opacity: 0.6 }}>
+                    {t('seguimiento.tuCodigo')}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 9, margin: '12px 0 10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 9, margin: '13px 0 11px' }}>
                     {String(req.delivery_pin).split('').map((d, i) => (
                       <span
                         key={i}
                         style={{
-                          width: 46, height: 56, borderRadius: 12, background: 'rgba(255,255,255,.13)',
+                          width: 48, height: 58, borderRadius: 13, background: 'rgba(255,255,255,.13)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          font: "800 26px 'IBM Plex Mono',monospace",
+                          font: "800 27px 'IBM Plex Mono',monospace",
+                          animation: `dxSube .4s cubic-bezier(.2,.8,.2,1) ${i * 70}ms both`,
                         }}
                       >
                         {d}
@@ -131,75 +192,65 @@ export default function SeguimientoPage() {
                     ))}
                   </div>
                   <div style={{ font: '500 12px/1.45 Manrope,sans-serif', opacity: 0.65 }}>
-                    Dáselo al repartidor cuando te entregue. Sin este código no puede cerrar el pedido.
+                    {t('seguimiento.codigoTexto')}
                   </div>
                 </div>
               )}
 
-              {/* Datos del pedido */}
-              <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
-                <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
-                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>CÓDIGO</div>
-                  <div style={{ font: "700 15px 'IBM Plex Mono',monospace", marginTop: 4 }}>#{req.tracking_code || code}</div>
-                </div>
-                <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
-                  <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>TARIFA</div>
-                  <div style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>{money(req.price)}</div>
-                </div>
-                {req.eta_minutes > 0 && req.status !== 'delivered' && (
-                  <div style={{ flex: 1, borderRadius: 14, background: 'var(--sf)', padding: '13px 15px' }}>
-                    <div style={{ font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>LLEGA EN</div>
-                    <div style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>{req.eta_minutes} min</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Repartidor asignado */}
+              {/* Quién lo lleva, con cómo contactarlo a un toque */}
               {req.courier_name && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: 14, borderRadius: 14, border: '1px solid var(--bd)', marginBottom: 18 }}>
-                  <span style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 15px Manrope,sans-serif', flex: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: 14, borderRadius: 16, border: '1px solid var(--bd)', marginBottom: 18 }}>
+                  <span style={{ width: 46, height: 46, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 16px Manrope,sans-serif', flex: 'none' }}>
                     {req.courier_name[0]?.toUpperCase()}
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: 'block', font: '700 14.5px Manrope,sans-serif' }}>{req.courier_name}</span>
-                    <span style={{ display: 'block', font: '500 12px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>Tu repartidor Domix</span>
+                    <span style={{ display: 'block', font: '500 12px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>
+                      {t('seguimiento.tuRepartidorSub')}
+                    </span>
                   </span>
-                  <a href={WHATSAPP} target="_blank" rel="noreferrer" style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--greenS)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="chat" size={20} fill color="var(--green)" />
+                  {req.courier_phone && (
+                    <a
+                      aria-label={t('seguimiento.llamar')}
+                      href={`tel:${req.courier_phone}`}
+                      style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--sf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                    >
+                      <Icon name="call" size={19} fill />
+                    </a>
+                  )}
+                  <a
+                    aria-label={t('seguimiento.escribir')}
+                    href={WHATSAPP}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--greenS)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                  >
+                    <Icon name="chat" size={19} fill color="var(--green)" />
                   </a>
                 </div>
               )}
 
-              {/* Línea de estado */}
-              {!cancelled && (
-                <div style={{ borderRadius: 16, border: '1px solid var(--bd)', padding: 16, marginBottom: 18 }}>
-                  {STATUS_STEPS.map((step, i) => {
-                    const done = i <= stepIndex;
-                    const current = i === stepIndex;
-                    const last = i === STATUS_STEPS.length - 1;
-                    return (
-                      <div key={step.id} style={{ display: 'flex', gap: 13 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
-                          <span style={{
-                            width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: done ? 'var(--green)' : 'var(--sf2)',
-                            animation: current ? 'trRing 1.8s infinite' : undefined,
-                          }}>
-                            <Icon name={done && !current ? 'check' : step.icon} size={16} fill color={done ? '#fff' : 'var(--mu)'} />
-                          </span>
-                          {!last && <span style={{ width: 2, flex: 1, minHeight: 20, background: i < stepIndex ? 'var(--green)' : 'var(--bd)' }} />}
-                        </div>
-                        <div style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
-                          <div style={{ font: `${current ? 800 : 700} 14px Manrope,sans-serif`, color: done ? 'var(--tx)' : 'var(--mu)' }}>{step.label}</div>
-                          <div style={{ font: '500 11.5px Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>{step.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Cifras del pedido */}
+              <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
+                <div style={{ flex: 1, borderRadius: 15, background: 'var(--sf)', padding: '13px 15px' }}>
+                  <div style={{ font: '700 10px Manrope,sans-serif', letterSpacing: '.11em', color: 'var(--mu)' }}>{t('seguimiento.codigo')}</div>
+                  <div className="num" style={{ font: "700 15px 'IBM Plex Mono',monospace", marginTop: 4 }}>#{req.tracking_code || code}</div>
                 </div>
-              )}
+                <div style={{ flex: 1, borderRadius: 15, background: 'var(--sf)', padding: '13px 15px' }}>
+                  <div style={{ font: '700 10px Manrope,sans-serif', letterSpacing: '.11em', color: 'var(--mu)' }}>{t('seguimiento.tarifa')}</div>
+                  <div className="num" style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>{money(req.price)}</div>
+                </div>
+                {req.eta_minutes > 0 && !entregado && (
+                  <div style={{ flex: 1, borderRadius: 15, background: 'var(--sf)', padding: '13px 15px' }}>
+                    <div style={{ font: '700 10px Manrope,sans-serif', letterSpacing: '.11em', color: 'var(--mu)' }}>{t('seguimiento.llegaEn')}</div>
+                    <div className="num" style={{ font: '800 17px Manrope,sans-serif', letterSpacing: '-.02em', marginTop: 3 }}>
+                      {req.eta_minutes} {t('comun.minutos')}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              {/* Ruta */}
+              {/* Dónde va */}
               <div style={{ borderRadius: 16, border: '1px solid var(--bd)', padding: 16, marginBottom: 18 }}>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none', paddingTop: 4 }}>
@@ -207,22 +258,58 @@ export default function SeguimientoPage() {
                     <span style={{ width: 2, flex: 1, minHeight: 22, background: 'var(--bd)' }} />
                   </span>
                   <span style={{ flex: 1, minWidth: 0, paddingBottom: 14 }}>
-                    <span style={{ display: 'block', font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>RECOGER EN</span>
-                    <span style={{ display: 'block', font: '700 13.5px Manrope,sans-serif', marginTop: 3 }}>{req.pickup_address}</span>
+                    <span style={{ display: 'block', font: '700 10px Manrope,sans-serif', letterSpacing: '.11em', color: 'var(--mu)' }}>{t('seguimiento.recogerEn')}</span>
+                    <span style={{ display: 'block', font: '700 13.5px/1.4 Manrope,sans-serif', marginTop: 3 }}>{req.pickup_address}</span>
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--green)', flex: 'none', marginTop: 4 }} />
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', font: '600 10.5px Manrope,sans-serif', letterSpacing: '.1em', color: 'var(--mu)' }}>ENTREGAR EN</span>
-                    <span style={{ display: 'block', font: '700 13.5px Manrope,sans-serif', marginTop: 3 }}>{req.dropoff_address}</span>
+                    <span style={{ display: 'block', font: '700 10px Manrope,sans-serif', letterSpacing: '.11em', color: 'var(--mu)' }}>{t('seguimiento.entregarEn')}</span>
+                    <span style={{ display: 'block', font: '700 13.5px/1.4 Manrope,sans-serif', marginTop: 3 }}>{req.dropoff_address}</span>
                   </span>
                 </div>
               </div>
 
+              {/* Los pasos, para quien quiera el detalle */}
+              {!cancelado && (
+                <div style={{ borderRadius: 16, border: '1px solid var(--bd)', padding: 16, marginBottom: 18 }}>
+                  {STATUS_STEPS.map((step, i) => {
+                    const hecho = i <= paso;
+                    const actual = i === paso;
+                    const ultimo = i === STATUS_STEPS.length - 1;
+                    const k = CLAVE[step.id];
+                    return (
+                      <div key={step.id} style={{ display: 'flex', gap: 13 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 'none' }}>
+                          <span
+                            className={actual ? 'dx-vivo' : undefined}
+                            style={{
+                              width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: hecho ? 'var(--green)' : 'var(--sf2)',
+                            }}
+                          >
+                            <Icon name={hecho && !actual ? 'check' : step.icon} size={16} fill color={hecho ? '#fff' : 'var(--mu)'} />
+                          </span>
+                          {!ultimo && <span style={{ width: 2, flex: 1, minHeight: 20, background: i < paso ? 'var(--green)' : 'var(--bd)' }} />}
+                        </div>
+                        <div style={{ flex: 1, paddingBottom: ultimo ? 0 : 14 }}>
+                          <div style={{ font: `${actual ? 800 : 700} 14px Manrope,sans-serif`, color: hecho ? 'var(--tx)' : 'var(--mu)' }}>
+                            {t(`seguimiento.${k}`)}
+                          </div>
+                          <div style={{ font: '500 11.5px/1.4 Manrope,sans-serif', color: 'var(--mu)', marginTop: 1 }}>
+                            {t(`seguimiento.${k}Desc`)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 10 }}>
-                <Button variant="soft" onClick={() => window.open(WHATSAPP, '_blank')} icon="chat">Ayuda</Button>
-                <Button onClick={() => router.push('/pedir')} icon="add">Pedir otro</Button>
+                <Button variant="soft" onClick={() => window.open(WHATSAPP, '_blank')} icon="chat">{t('seguimiento.ayuda')}</Button>
+                <Button onClick={() => router.push('/pedir')} icon="add">{t('seguimiento.pedirOtro')}</Button>
               </div>
             </div>
           </>

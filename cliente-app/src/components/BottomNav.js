@@ -2,18 +2,20 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from './ui';
+import { useIdioma } from '../context/IdiomaProvider';
 
 const TABS = [
-  { name: 'Inicio', path: '/', icon: 'home' },
-  { name: 'Servicios', path: '/servicios', icon: 'apps' },
-  { name: 'Actividad', path: '/pedidos', icon: 'receipt_long' },
-  { name: 'Cuenta', path: '/cuenta', icon: 'person' },
+  { clave: 'inicio', path: '/', icon: 'home' },
+  { clave: 'servicios', path: '/servicios', icon: 'apps' },
+  { clave: 'actividad', path: '/pedidos', icon: 'receipt_long' },
+  { clave: 'cuenta', path: '/cuenta', icon: 'person' },
 ];
 
 /* Barra flotante tipo píldora, como la de Turapp. */
 export default function BottomNav({ badges = {} }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useIdioma();
 
   return (
     <div
@@ -39,7 +41,7 @@ export default function BottomNav({ badges = {} }) {
             }}
           >
             <Icon name={tab.icon} size={21} fill={active} />
-            <span style={{ font: '700 10.5px Manrope,sans-serif' }}>{tab.name}</span>
+            <span style={{ font: '700 10.5px Manrope,sans-serif' }}>{t(`nav.${tab.clave}`)}</span>
             {badge > 0 && (
               <span style={{ position: 'absolute', top: 7, right: '50%', marginRight: -20, minWidth: 17, height: 17, padding: '0 4px', borderRadius: 99, background: 'var(--green)', color: '#fff', font: '800 10px Manrope,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {badge}
