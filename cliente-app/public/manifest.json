@@ -1,12 +1,12 @@
 {
-  "name": "Domix Repartidor",
-  "short_name": "Domix Rep",
-  "description": "App de repartidores de Domix.",
+  "name": "Domix",
+  "short_name": "Domix",
+  "description": "Mensajería, encomiendas, domicilios y mandados en Buenaventura. Desde $6.000.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0a",
-  "theme_color": "#0B2547",
+  "theme_color": "#0a0a0a",
   "lang": "es-CO",
   "icons": [
     {

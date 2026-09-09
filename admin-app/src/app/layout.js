@@ -1,4 +1,5 @@
 import './globals.css';
+import RegistrarSW from '../components/RegistrarSW';
 import { AppModeProvider } from '../context/AppModeProvider';
 import { AuthProvider } from '../context/AuthProvider';
 import { ThemeProvider } from '../context/ThemeProvider';
@@ -7,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 import Onboarding from '../components/Onboarding';
 
 export const metadata = {
+  manifest: '/manifest.json',
   title: 'Domix — Panel interno',
   description: 'Centro de operaciones de Domix Mensajería & Logística',
 };
@@ -23,6 +25,7 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <RegistrarSW />
         <ThemeProvider>
           <AuthProvider>
           <AppModeProvider>

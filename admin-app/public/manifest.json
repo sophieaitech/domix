@@ -1,12 +1,12 @@
 {
-  "name": "Domix Repartidor",
-  "short_name": "Domix Rep",
-  "description": "App de repartidores de Domix.",
+  "name": "Domix Panel",
+  "short_name": "Panel",
+  "description": "Panel interno de operaciones de Domix.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0B2547",
+  "background_color": "#0f1011",
+  "theme_color": "#0f1011",
   "lang": "es-CO",
   "icons": [
     {

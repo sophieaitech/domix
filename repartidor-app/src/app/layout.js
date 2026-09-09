@@ -1,4 +1,5 @@
 import './globals.css';
+import RegistrarSW from '../components/RegistrarSW';
 import { AppModeProvider } from '../context/AppModeProvider';
 import { ThemeProvider } from '../context/ThemeProvider';
 import { CourierSessionProvider } from '../context/CourierSessionProvider';
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <RegistrarSW />
         <ThemeProvider>
           <AppModeProvider>
           <PhoneFrame>
